@@ -1887,7 +1887,7 @@ class FlightCreateOrderScreen extends SuperView {
                     <TouchableHighlight underlayColor='transparent' onPress={this._showPriceDetail}>
                         <View style={{ flexDirection: "row", flex: 1, justifyContent: "flex-end", alignItems: "center", height: 50 }}>
                             <CustomText style={{ fontSize: 12, color: 'gray' }} text='明细' />
-                            <Ionicons name={showPriceDetail ? 'ios-arrow-up' : 'ios-arrow-down'} size={24} color={'gray'} style={{ marginRight: 5 }} />
+                            <Ionicons name={showPriceDetail ? 'chevron-up' : 'chevron-down'} size={24} color={'gray'} style={{ marginRight: 5 }} />
                         </View>
                     </TouchableHighlight>
                     <TouchableHighlight underlayColor='transparent' onPress={this._orderBtnClick}>

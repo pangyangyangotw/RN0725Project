@@ -490,7 +490,7 @@ export default class InflFlightOrderRefundScreen extends SuperView {
         //                                 <Text allowFontScaling={false} style={{ marginLeft: 5 }}>{owJourney.DepartureTime && owJourney.DepartureTime.format('MM-dd')} {owJourney.DepartureTime.getWeek()} {owJourney.Departure}-{owJourney.Destination}</Text>
         //                             </View>
         //                             <View style={{ justifyContent: 'center' }}>
-        //                                 <Ionicons name={showJourneyDetail ? 'ios-arrow-up' : 'ios-arrow-down'} size={24} color={'gray'} style={{ marginRight: 5 }} />
+        //                                 <Ionicons name={showJourneyDetail ? 'chevron-up' : 'chevron-down'} size={24} color={'gray'} style={{ marginRight: 5 }} />
         //                             </View>
         //                         </View>
         //                     </TouchableHighlight>

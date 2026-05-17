@@ -384,7 +384,7 @@ class HotelOrderDetailScreen extends SuperView {
                     {/* <TouchableOpacity onPress={() => { this.setState({ showPrice: !this.state.showPrice }) }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                             <CustomText style={{ color: '#6DC17F', fontSize: 13 }} text={showPrice ? '收起详情' : '展开详情'} />
-                            <Ionicons name={showPrice ? 'ios-arrow-up' : 'ios-arrow-down'} size={24} color={'#6DC17F'} style={{ marginRight: 5 }} />
+                            <Ionicons name={showPrice ? 'chevron-up' : 'chevron-down'} size={24} color={'#6DC17F'} style={{ marginRight: 5 }} />
                         </View>
                     </TouchableOpacity> */}
                 </View>
@@ -437,7 +437,7 @@ class HotelOrderDetailScreen extends SuperView {
                                     </View>
                                     <View style={{ flexDirection: "row", alignItems: 'center', justifyContent: 'center' }}>
                                         <CustomText text={isShowDetailPrice ? '收起详情' : '展开详情'} style={{ color: Theme.theme }} />
-                                        <Ionicons name={isShowDetailPrice ? 'ios-arrow-up' : 'ios-arrow-down'} size={24} color={'gray'} style={{ marginRight: 5 }} />
+                                        <Ionicons name={isShowDetailPrice ? 'chevron-up' : 'chevron-down'} size={24} color={'gray'} style={{ marginRight: 5 }} />
                                     </View>
                                 </View>
                             </TouchableHighlight>
@@ -460,7 +460,7 @@ class HotelOrderDetailScreen extends SuperView {
                                     </View>
                                     <View style={{ flexDirection: "row", alignItems: 'center', justifyContent: 'center' }}>
                                         <CustomText text={isShowDetailPrice ? '收起详情' : '展开详情'} style={{ color: Theme.theme }} />
-                                        <Ionicons name={isShowDetailPrice ? 'ios-arrow-up' : 'ios-arrow-down'} size={24} color={'gray'} style={{ marginRight: 5 }} />
+                                        <Ionicons name={isShowDetailPrice ? 'chevron-up' : 'chevron-down'} size={24} color={'gray'} style={{ marginRight: 5 }} />
                                     </View>
                                 </View>
                             </TouchableHighlight>

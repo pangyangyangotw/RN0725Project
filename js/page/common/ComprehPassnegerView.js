@@ -204,7 +204,7 @@ class ComprehPassnegerView extends React.Component {
                                         }                                   
                                     </View>
                                     <View style={{ flex: 1, alignItems: 'flex-end', justifyContent: 'center' }}>
-                                        <Ionicons name={'ios-arrow-forward'} size={22} color={'lightgray'} />
+                                        <Ionicons name={'chevron-forward'} size={22} color={'lightgray'} />
                                     </View>
                                 </View>
                             </TouchableHighlight>

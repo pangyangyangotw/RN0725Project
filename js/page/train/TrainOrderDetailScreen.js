@@ -617,7 +617,7 @@ class TrainOrderDetailScreen extends SuperView {
                     >
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                             <CustomText style={{ color: '#6DC17F', fontSize: 13 }} text={showTrainNum ? '收起' : '展开'} />
-                            <Ionicons name={showTrainNum ? 'ios-arrow-up' : 'ios-arrow-down'} size={24} color={'#6DC17F'} style={{ marginRight: 5 }} />
+                            <Ionicons name={showTrainNum ? 'chevron-up' : 'chevron-down'} size={24} color={'#6DC17F'} style={{ marginRight: 5 }} />
                         </View>
                     </TouchableOpacity>
                 </View>

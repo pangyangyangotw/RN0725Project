@@ -439,7 +439,7 @@ class FlightChangeScreen extends SuperView {
                         <TouchableHighlight underlayColor='transparent' onPress={this._selectReason}>
                             <View style={{ backgroundColor: "white", alignItems: 'center', justifyContent: 'space-between', flexDirection: 'row', paddingHorizontal: 10, paddingVertical: 15 }}>
                                 <HighLight name={reasonDesc ? reasonDesc : '请选择改签原因'} />
-                                <Ionicons name={'ios-arrow-forward'} size={22} color={'lightgray'} />
+                                <Ionicons name={'chevron-forward'} size={22} color={'lightgray'} />
                             </View>
                         </TouchableHighlight>
                     </View>
@@ -485,7 +485,7 @@ class FlightChangeScreen extends SuperView {
                                                     <CustomText text={index+1+'级审批人'} style={{ flex: 3, height:40, paddingTop:10}} />
                                                     <CustomText text={item.approvalPerson&&item.approvalPerson.Name} numberOfLines={2} style={{flex: 7, height:40, paddingTop:10,width:10}}/>
                                                 </TouchableOpacity>
-                                                <Ionicons name={'ios-arrow-forward'} size={22} color={'lightgray'} style={{height:40,paddingTop:9}} />
+                                                <Ionicons name={'chevron-forward'} size={22} color={'lightgray'} style={{height:40,paddingTop:9}} />
                                             </View>
                                         )
                                     })
@@ -553,7 +553,7 @@ class FlightChangeScreen extends SuperView {
                                     <CustomText text='打开相册或相机' style={{color: Theme.theme }} />
                                 </TouchableOpacity>}
                         </View>
-                        {/* <Ionicons name={'ios-arrow-forward'} size={22} color={'lightgray'} style={{ marginLeft: 5 }} /> */}
+                        {/* <Ionicons name={'chevron-forward'} size={22} color={'lightgray'} style={{ marginLeft: 5 }} /> */}
                 </View>
                 <View style={{ backgroundColor: 'white',justifyContent:'space-between',marginTop:10}}>
                         <CustomText text={'单个文件最大5MB，数量最多5个，格式为:'} style={{fontSize:11, color:'red'}} ></CustomText>

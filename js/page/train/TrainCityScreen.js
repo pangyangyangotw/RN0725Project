@@ -196,7 +196,7 @@ export default class TrainCityScreen extends SuperView {
                                 borderBottomColor: Theme.promptFontColor
                             }}>
                     <CustomText style={{  }} text={section.title} />
-                    <Ionicons name={section.isOpen ? 'ios-arrow-up' : 'ios-arrow-down'} size={20} color={Theme.assistFontColor} />
+                    <Ionicons name={section.isOpen ? 'chevron-up' : 'chevron-down'} size={20} color={Theme.assistFontColor} />
                 </View>
             </TouchableHighlight>
         )

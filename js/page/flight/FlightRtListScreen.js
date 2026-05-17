@@ -668,7 +668,7 @@ class FlightRtListScreen extends SuperView {
                             <CustomText style={{color: Theme.commonFontColor,}} text={`${depatureDate.format('yyyy-MM-dd')} ${depatureDate.getWeek()} ${depatureDate.format('HH:mm')}-${arrivalDate.format('HH:mm')}`} numberOfLines={2}/>
                         </View>
                     </View>
-                    <Ionicons name={'ios-arrow-forward'} size={20} color={'lightgray'} />
+                    <Ionicons name={'chevron-forward'} size={20} color={'lightgray'} />
                 </View>
             </TouchableHighlight>
         )

@@ -280,7 +280,7 @@ export default class FlightFilterScreen extends SuperView {
                                     <TouchableHighlight underlayColor='transparent' onPress={this._sectionClick.bind(this, section)}>
                                         <View style={styles.section}>
                                             <CustomText text={section.title} />
-                                            <Ionicons name={section.isOpen ? 'ios-arrow-up' : 'ios-arrow-down'} size={24} color={'gray'} />
+                                            <Ionicons name={section.isOpen ? 'chevron-up' : 'chevron-down'} size={24} color={'gray'} />
                                         </View>
                                     </TouchableHighlight>
                                     {

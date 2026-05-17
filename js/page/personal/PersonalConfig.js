@@ -83,9 +83,9 @@ const PersonalConfig = {
     PersonalInfo: {
         screen: PersonalInfoScreen
     },
-    AddApprovalScreen: {
-        screen: AddApprovalScreen
-    },
+    // AddApprovalScreen: {
+    //     screen: AddApprovalScreen
+    // },
     // FeedBack: {
     //     screen: FeedBackScreen
     // },

@@ -95,7 +95,6 @@ class PersonalList extends React.Component {
                 cleck:false
             }
         ]
-
         let travelllerList = [
             {
                 key: 'travelller',
@@ -122,8 +121,7 @@ class PersonalList extends React.Component {
             this.setState({
                 customerInfo:customerInfo,
             })
-        })
-        
+        }) 
         UserInfoDao.getUserInfo().then(userInfo=>{
             if((userInfo&&userInfo.Permission&8)==8){//本人有帮他人预订权限时显示
                 this.state.listArray=this.state.listArray.concat(handTravelList);
@@ -137,7 +135,6 @@ class PersonalList extends React.Component {
         }).catch(error => {
             this.toastMsg(error.message || '获取数据异常');
         })
-       
         CommonService.OrderHubInvoiceRight().then(response => {//获取是否展示invoice
             if (response && JSON.parse(response).success) {
                 this.state.listArray=invoiceList.concat(this.state.listArray);
@@ -230,7 +227,7 @@ class PersonalList extends React.Component {
                                 //     item.cleck = !item.cleck
                                 //     this.setState({})  
                                 //  }}
-                                 onPressOut={this._toDetail.bind(this, item)}
+                                //  onPressOut={this._toDetail.bind(this, item)}
                                  style={{paddingHorizontal:20}}
                                  delayLongPress={300} // 适当延长长按触发时间
                                  shouldCancelWhenOutside={true} // 滑动到组件外时取消

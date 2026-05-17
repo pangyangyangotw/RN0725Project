@@ -713,7 +713,7 @@ export default class EditHandPassengerScreen extends SuperView {
                                 //                 <CustomText text={itemIndex ? itemIndex.ItemInput : remark} style={{ color: itemIndex ? null : 'gray', flex: 1 }} 
                                 //                 onPress={()=>{this._toSelectDicList(obj)}} 
                                 //                 />
-                                //                 <Ionicons name={'ios-arrow-forward'} size={22} color={'lightgray'} />
+                                //                 <Ionicons name={'chevron-forward'} size={22} color={'lightgray'} />
                                 //             </View>
                                 //     }
                                 // </View>
@@ -800,7 +800,7 @@ export default class EditHandPassengerScreen extends SuperView {
                                 }} 
                         />
                         </View>
-                        <Ionicons name={'ios-arrow-forward'} size={20} color={'lightgray'} />
+                        <Ionicons name={'chevron-forward'} size={20} color={'lightgray'} />
                     </TouchableOpacity>
                 )
             })

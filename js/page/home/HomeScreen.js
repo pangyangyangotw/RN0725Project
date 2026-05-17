@@ -1546,7 +1546,7 @@ _addNewTravel=()=>{
                                         })
                                     }}>
                                       <View style={[styles.tapStyle,{borderColor:selectTap==item.type?Theme.theme:Theme.promptFontColor,backgroundColor:selectTap==item.type?Theme.greenBg:'#fff'}]}>
-                                          <CustomText style={{fontSize:13, padding:10,color:selectTap==item.type?Theme.theme:Theme.commonFontColor }} color={Theme.darkColor} text={item.name} />
+                                          <CustomText style={{fontSize:13, paddingVertical:8,paddingHorizontal:10,color:selectTap==item.type?Theme.theme:Theme.commonFontColor }} color={Theme.darkColor} text={item.name} />
                                       </View>
                                     </TouchableOpacity>
                                     :null
@@ -2719,14 +2719,14 @@ const styles = StyleSheet.create({
     flex:1
   },
   tapStyle:{
-      height:34,
+      // height:34,
       flexDirection:'row',
       alignItems:'center',
       justifyContent:'center',
       borderRadius:6,
       borderWidth:1,
       marginRight:10,
-      marginVertical:5
+      marginVertical:5,
   },
 
 })

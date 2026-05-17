@@ -366,7 +366,7 @@ class InterHotelOrderDetailScreen extends SuperView {
                                     </View>
                                     <View style={{ flexDirection: "row", alignItems: 'center', justifyContent: 'center' }}>
                                         <CustomText text={isShowDetailPrice ? '收起详情' : '展开详情'} style={{ color: Theme.theme }} />
-                                        <Ionicons name={isShowDetailPrice ? 'ios-arrow-up' : 'ios-arrow-down'} size={24} color={'gray'} style={{ marginRight: 5 }} />
+                                        <Ionicons name={isShowDetailPrice ? 'chevron-up' : 'chevron-down'} size={24} color={'gray'} style={{ marginRight: 5 }} />
                                     </View>
                                 </View>
                             </TouchableHighlight>

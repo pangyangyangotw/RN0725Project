@@ -1489,7 +1489,7 @@ class Flight_compCreateOrderScreen extends SuperView {
                                             <HighLight style={{}} name={'发票抬头'} /> :
                                             <CustomText style={{}} text={'发票抬头'} />
                                         }
-                                        <Ionicons name={'ios-arrow-forward'} size={22} color={'lightgray'} />
+                                        <Ionicons name={'chevron-forward'} size={22} color={'lightgray'} />
                                     </View>
                                 </TouchableHighlight>
                             </View>
@@ -1553,7 +1553,7 @@ class Flight_compCreateOrderScreen extends SuperView {
                                                             style={{ color:'gray', flex: 1 ,backgroundColor:'#fff',height:40, paddingTop:10
                                                 }} 
                                                             onPress={()=>{}} />
-                                                <Ionicons name={'ios-arrow-forward'} size={22} color={'lightgray'} style={{backgroundColor:'#fff',height:40,paddingTop:9}} />
+                                                <Ionicons name={'chevron-forward'} size={22} color={'lightgray'} style={{backgroundColor:'#fff',height:40,paddingTop:9}} />
                                             </View> */}
                     {
                         customerInfo&&customerInfo.Setting&&customerInfo.Setting.AttachmentConfig&&customerInfo.Setting.AttachmentConfig.AirContainsAttachment//判断上传附件是否展示
@@ -1588,7 +1588,7 @@ class Flight_compCreateOrderScreen extends SuperView {
                                                 <CustomText text='打开相册或相机' style={{color: Theme.theme }} />
                                             </TouchableOpacity>}
                                     </View>
-                                    {/* <Ionicons name={'ios-arrow-forward'} size={22} color={'lightgray'} style={{ marginLeft: 5 }} /> */}
+                                    {/* <Ionicons name={'chevron-forward'} size={22} color={'lightgray'} style={{ marginLeft: 5 }} /> */}
                             </View>
                             <View style={{ backgroundColor: 'white',justifyContent:'space-between',marginTop:10}}>
                                     <CustomText text={'单个文件最大5MB，数量最多5个，格式为:'} style={{fontSize:11, color:'red'}} ></CustomText>
@@ -1655,7 +1655,7 @@ class Flight_compCreateOrderScreen extends SuperView {
                     <TouchableHighlight underlayColor='transparent' onPress={this._showPriceDetail}>
                         <View style={{ flexDirection: "row", flex: 1, justifyContent: "flex-end", alignItems: "center", height: 50 }}>
                             <CustomText style={{ fontSize: 12, color: 'gray' }} text='明细' />
-                            <Ionicons name={showPriceDetail ? 'ios-arrow-up' : 'ios-arrow-down'} size={16} color={'gray'} style={{ marginLeft:2 }} />
+                            <Ionicons name={showPriceDetail ? 'chevron-up' : 'chevron-down'} size={16} color={'gray'} style={{ marginLeft:2 }} />
                         </View>
                     </TouchableHighlight>
                     <TouchableHighlight underlayColor='transparent' onPress={this._comp_orderBtnClick}>

@@ -185,9 +185,9 @@ export class SelectView extends React.Component {
                              <CustomText style={{color:Theme.theme}} text={'添加'}/>
                              </View>
                              :
-                             <Ionicons name={'ios-arrow-forward'} size={20} color={'lightgray'} />
+                             <Ionicons name={'chevron-forward'} size={20} color={'lightgray'} />
                         }
-                        {/* <Ionicons name={'ios-arrow-forward'} size={20} color={'lightgray'} /> */}
+                        {/* <Ionicons name={'chevron-forward'} size={20} color={'lightgray'} /> */}
                     </TouchableOpacity>
             </View>
         )
@@ -227,7 +227,7 @@ export class InfoDicView extends React.Component {
                                             select_DicList()
                                         }} 
                             />
-                            <Ionicons name={'ios-arrow-forward'} size={20} color={'lightgray'} />
+                            <Ionicons name={'chevron-forward'} size={20} color={'lightgray'} />
                         </View>
                 }
                 </View>

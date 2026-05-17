@@ -153,7 +153,7 @@ class TrainTicketDetailScreen extends SuperView {
                     <CustomText text={(departureTime && departureTime.format('yyyy-MM-dd')) +' '+departureTime.getWeek()} style={{ color: Theme.theme }} />
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: "center" }}>
                             <CustomText style={{ marginRight: 5, color: Theme.theme }} text='预订须知' onPress={this._alertNotice} />
-                            <Ionicons name={'ios-arrow-forward'} size={14} color={Theme.theme} />
+                            <Ionicons name={'chevron-forward'} size={14} color={Theme.theme} />
                     </View>
                 </View>
                 <View style={{ flexDirection: 'row', backgroundColor: '#fff', paddingHorizontal: 30, paddingVertical:30,alignItems:'flex-start' }}>

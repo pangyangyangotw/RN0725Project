@@ -1136,7 +1136,7 @@ class CompDetailScreen extends SuperView {
                             <CustomText text={'下一步'} style={{fontSize:15,fontWeight:'bold'}}/>
                             <TouchableOpacity onPress={()=>{this.setState({isAlertAhow:false})}}>
                             {/* <Ionicons name='close-circle' size={15} color={Theme.darkColor} style={{marginLeft:10}}></Ionicons> */}
-                            <Ionicons name={'ios-close-circle'} size={22} color={Theme.promptFontColor} />
+                            <Ionicons name={'chevron-forward'} size={22} color={Theme.promptFontColor} />
                             </TouchableOpacity>
                         </View>
                         <View style={{width:'100%',height:1,backgroundColor:Theme.lineColor}}></View>
