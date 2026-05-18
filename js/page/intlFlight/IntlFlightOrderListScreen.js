@@ -2,7 +2,8 @@ import React from 'react';
 import {
     View,
     FlatList,
-    DeviceEventEmitter
+    DeviceEventEmitter,
+    InteractionManager
 } from 'react-native';
 import SuperView from '../../super/SuperView';
 import SearchInput from '../../custom/SearchInput';
@@ -43,13 +44,15 @@ class IntlFlightOrderListScreen extends SuperView {
         }
     }
     _backBtnClick = () => {
-        !this.params.backtoMy?
-        (
-            DeviceEventEmitter.emit('deleteApply', {}),
-            NavigationUtils.popToTop(this.props.navigation)
-        )
-        :
-        NavigationUtils.pop(this.props.navigation);
+        if (!this.params.backtoMy) {
+            NavigationUtils.popToTop(this.props.navigation);
+            InteractionManager.runAfterInteractions(() => {
+                DeviceEventEmitter.emit('deleteApply', {});
+            });
+        } else {
+            NavigationUtils.pop(this.props.navigation);
+        }
+        return true;
     }
 
 
@@ -270,4 +273,3 @@ const getStatePorps = state => ({
     comp_userInfo: state.comp_userInfo,
 })
 export default connect(getStatePorps)(IntlFlightOrderListScreen);
-

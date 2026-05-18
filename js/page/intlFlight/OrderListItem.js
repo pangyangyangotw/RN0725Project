@@ -21,10 +21,58 @@ class OrderListItem extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = {
-            IsShowServiceFee:true
+            IsShowServiceFee:true,
+            noChooseSeatAirlineConfig: [],
         }
     }
 
+    _getNoChooseSeatSet = () => {
+        const list = Array.isArray(this.state.noChooseSeatAirlineConfig) ? this.state.noChooseSeatAirlineConfig : [];
+        const blocked = list
+            .map((it) => {
+                if (!it) return '';
+                const v = (typeof it === 'string' || typeof it === 'number')
+                    ? String(it)
+                    : (it.Code || it.code || it.Airline || it.airline || it.AirlineCode || it.airlineCode || '');
+                return String(v).trim().toUpperCase();
+            })
+            .filter(Boolean);
+        return new Set(blocked);
+    }
+
+    _canChooseSeatByAirlines = (order) => {
+        const o = order || {};
+        const blockedSet = this._getNoChooseSeatSet();
+        if (!blockedSet || blockedSet.size === 0) return true;
+
+        const airlines = Array.isArray(o.OrderAirList) ? o.OrderAirList : [];
+        if (airlines.length > 0) {
+            return airlines.some((it) => {
+                const code = it && (it.AirlineCode);
+                const v = String(code || '').trim().toUpperCase();
+                if (!v) return true;
+                return !blockedSet.has(v);
+            });
+        }
+
+        const singleCode = String(o.Airline || o.AirlineCode || o.Code || '').trim().toUpperCase();
+        if (!singleCode) return true;
+        return !blockedSet.has(singleCode);
+    }
+
+    _canChooseSeatByShareAirlineCode = (order) => {
+        const o = order || {};
+        const blockedSet = this._getNoChooseSeatSet();
+        if (!blockedSet || blockedSet.size === 0) return true;
+        const orderAirList = Array.isArray(o.OrderAirList) ? o.OrderAirList : [];
+        if (orderAirList.length === 0) return true;
+        return orderAirList.some((item) => {
+            const shareCode = item && item.ShareAirlineCode;
+            const v = String(shareCode || '').trim().toUpperCase();
+            if (!v) return true;
+            return !blockedSet.has(v);
+        });
+    }
 
     _toDetail = () => {
         NavigationUtils.push(this.props.navigation, 'IntlFlightOrderDetail', {order:this.props.order});
@@ -65,6 +113,7 @@ class OrderListItem extends React.PureComponent {
     }
     
     componentDidMount (){
+        const { otwThis } = this.props;
         //服务费
         var nationalCodes = [this.props.order.DepartureCode,this.props.order.DestinationCode];
         let model={
@@ -82,6 +131,33 @@ class OrderListItem extends React.PureComponent {
        }).catch(error => {
           
        })
+
+        let melaModel = { 
+            Key:"noChooseSeatAirlineConfig" 
+        }
+        CommonService.GetMelaData(melaModel).then(response => {
+            if (response && response.success && response.data) {
+                let cfg = response.data.noChooseSeatAirlineConfig ?? response.data.NoChooseSeatAirlineConfig ?? response.data;
+                if (typeof cfg === 'string') {
+                    try {
+                        cfg = JSON.parse(cfg);
+                    } catch (e) {
+                        cfg = [];
+                    }
+                }
+                this.setState({
+                    noChooseSeatAirlineConfig: Array.isArray(cfg) ? cfg : [],
+                })
+            }
+        }).catch(error => {
+            otwThis && otwThis.toastMsg && otwThis.toastMsg(error.message);
+        })
+    }
+
+    chooseSeat = () => {
+        const { order } = this.props;
+        const { noChooseSeatAirlineConfig } = this.state;
+        NavigationUtils.push(this.props.navigation, 'FlightChooseSeatScreen', {order,from:'intlFlight',noChooseSeatAirlineConfig});
     }
 
     _renderOrder() {
@@ -102,6 +178,10 @@ class OrderListItem extends React.PureComponent {
                 fromDateDesc = departureTime.format('yyyy-MM-dd HH:mm');
             }
         }
+        const departureTimeValue = Utils.Date.toDate(order.DepartureTime);
+        const nowTime = new Date().getTime();
+        const depTime = departureTimeValue && departureTimeValue.getTime ? departureTimeValue.getTime() : NaN;
+        const isBeforeDeparture = isFinite(depTime) ? nowTime < depTime : true;
         const isShowPay = order.Status === IntlFlightEnum.orderStatus.WaitingPayment;
         const isCheckpeding = order.Status === IntlFlightEnum.orderStatus.Approving;
         let showBtn = this.props.userInfoId ===(order.CreateEmployee&&order.CreateEmployee.Id) ?true:false;
@@ -191,6 +271,15 @@ class OrderListItem extends React.PureComponent {
                                 </View>
                             ) : null
                         }
+                        {
+                            (order.Status===4 ||order.Status===9) && isBeforeDeparture && this._canChooseSeatByAirlines(order) && this._canChooseSeatByShareAirlineCode(order) ?
+                            <View style={{ padding: 5, flexDirection: 'row-reverse' ,borderTopColor:Theme.lineColor, borderTopWidth:1}}>
+                                <TouchableHighlight onPress={this.chooseSeat} underlayColor='transparent' style={curStyle.btn}>
+                                    <CustomText style={{ color: 'white' }} text='选座' />
+                                </TouchableHighlight>
+                            </View>:null
+                        }
+                        
                         </View>
                         :null
                     }

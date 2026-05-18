@@ -20,9 +20,12 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 import Theme from '../../res/styles/Theme';
 import HeaderView from './HeaderView';
 import ContactView from '../common/ContactView';
+// import DepartView from '../common/DepartView';
+// import UserInfoDao from '../../service/UserInfoDao';
 import UserInfoUtil from '../../util/UserInfoUtil';
 import { connect } from 'react-redux';
 import AdditionInfoView from '../common/AdditionInfoView';
+// import MailSelectView from '../common/MailSelectView';
 import PassnegerView from '../common/PassnegerView';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import PriceDetailView from './PriceDetailView';
@@ -591,6 +594,53 @@ class FlightCreateOrderScreen extends SuperView {
             });
             return subset;
         };
+        var getVisibleDictIdSet = function (dictConfigList, dictMapList, dictItemList) {
+            var configs = dictConfigList || [];
+            var mapList = dictMapList || [];
+            var configById = {};
+            var childIdSet = new Set();
+            configs.forEach(function (cfg) {
+                if (cfg && cfg.Id !== undefined) {
+                    configById[cfg.Id] = cfg;
+                }
+                if (cfg && cfg.NextId) {
+                    childIdSet.add(cfg.NextId);
+                }
+            });
+            var rootIds = [];
+            configs.forEach(function (cfg) {
+                const isCascadeChild = cfg && cfg.BeforeParentNameList && cfg.BeforeParentNameList.length > 0;
+                if (cfg && cfg.Id !== undefined && !childIdSet.has(cfg.Id) && (cfg.ShowInOrder || isCascadeChild)) {
+                    rootIds.push(cfg.Id);
+                }
+            });
+            var visibleIdSet = new Set();
+            var visiting = new Set();
+            var visit = function (id) {
+                if (!id || visibleIdSet.has(id) || visiting.has(id)) return;
+                visiting.add(id);
+                visibleIdSet.add(id);
+                var cfg = configById[id];
+                var nextId = cfg && cfg.NextId;
+                if (nextId) {
+                    var parentItem = dictItemList && dictItemList.find(function (it) {
+                        if (!it) return false;
+                        if (cfg && cfg.Code !== undefined && it.DictCode == cfg.Code) return true;
+                        return it.DictId == id;
+                    });
+                    var parentName = parentItem && parentItem.ItemName;
+                    var rules = mapList.filter(function (m) { return m && m.DictId == nextId; });
+                    if (rules.length === 0) {
+                        visit(nextId);
+                    } else if (parentName && rules.some(function (m) { return m && m.ParentName == parentName; })) {
+                        visit(nextId);
+                    }
+                }
+                visiting.delete(id);
+            };
+            rootIds.forEach(function (id) { visit(id); });
+            return visibleIdSet;
+        };
         const hasValidSupplierType = [1, 3].includes(goFlightData?.SupplierType) || 
                             [1, 3].includes(backFlightData?.SupplierType);
         const isBuyerNameEmpty = InvoiceInfo?.BuyerName === '' || !InvoiceInfo?.BuyerName;//抬头名称是否 为空
@@ -701,7 +751,11 @@ class FlightCreateOrderScreen extends SuperView {
                 }
             }
             if(customerInfo.EmployeeDictList&&customerInfo.EmployeeDictList.length>0){
+                 const visibleIdSet = getVisibleDictIdSet(customerInfo.EmployeeDictList, customerInfo.DictMapList, obj.Addition && obj.Addition.DictItemList);
                  for (let i = 0; i < customerInfo.EmployeeDictList.length; i++) {
+                    if (!visibleIdSet.has(customerInfo.EmployeeDictList[i].Id)) {
+                        continue;
+                    }
                     let itemIndex =  obj.Addition&&obj.Addition.DictItemList&&obj.Addition.DictItemList.find(
                         item => item.DictCode === customerInfo.EmployeeDictList[i].Code
                     );
@@ -709,11 +763,15 @@ class FlightCreateOrderScreen extends SuperView {
                         itemIndex = customerInfo.EmployeeDictList[i]
                         itemIndex.DictName =Util.Parse.isChinese() ? customerInfo.EmployeeDictList[i].Name : customerInfo.EmployeeDictList[i].EnName
                     }
-                    if(customerInfo.EmployeeDictList[i].IsRequire &&customerInfo.EmployeeDictList[i].ShowInOrder){
-                            if (itemIndex.NeedInput && !itemIndex.ItemName) {
-                                this.toastMsg(I18nUtil.tranlateInsert('{{noun}}不能为空', I18nUtil.translate(itemIndex.DictName)));
-                                return;
-                            }
+                    const isCascadeChild = customerInfo.EmployeeDictList[i].BeforeParentNameList && customerInfo.EmployeeDictList[i].BeforeParentNameList.length > 0;
+                    if(customerInfo.EmployeeDictList[i].IsRequire && (customerInfo.EmployeeDictList[i].ShowInOrder || isCascadeChild)){
+                        if (customerInfo.EmployeeDictList[i].NeedInput && !itemIndex.ItemName) {
+                            this.toastMsg(I18nUtil.tranlateInsert('{{noun}}不能为空', I18nUtil.translate(itemIndex.DictName)));
+                            return;
+                        } else if (!customerInfo.EmployeeDictList[i].NeedInput && !itemIndex.ItemId) {
+                            this.toastMsg(I18nUtil.tranlateInsert('{{noun}}不能为空', I18nUtil.translate(itemIndex.DictName)));
+                            return;
+                        }
                     }
                 }
             }
@@ -808,7 +866,8 @@ class FlightCreateOrderScreen extends SuperView {
                 NationalCode: obj.NationalCode,
                 IssueNationCode: obj.NationalCode,
                 Birthday: obj.Birthday,
-                Sex: obj.Sex
+                Sex: obj.Sex,
+                UseEnglish:UseEnglish
             }
             let insuranceArr = [];
             if (obj.cusInsurances) {
@@ -833,19 +892,27 @@ class FlightCreateOrderScreen extends SuperView {
                 }
             }
             if(customerInfo.EmployeeDictList&&customerInfo.EmployeeDictList.length>0){
+                const visibleIdSet = getVisibleDictIdSet(customerInfo.EmployeeDictList, customerInfo.DictMapList, obj.Addition && obj.Addition.DictItemList);
                 for (let i = 0; i < customerInfo.EmployeeDictList.length; i++) {
-                    let itemIndex = obj.Addition&&obj.Addition.DictItemList&&obj.Addition.DictItemList.find(
-                        item => item.DictId === customerInfo.EmployeeDictList[i].Id
+                    if (!visibleIdSet.has(customerInfo.EmployeeDictList[i].Id)) {
+                        continue;
+                    }
+                    let itemIndex = obj.Addition&&obj.Addition.DictItemList&&obj.Addition.DictItemList.find(item =>
+                        item.DictCode === customerInfo.EmployeeDictList[i].Code
                     );
                     if(!itemIndex){
                         itemIndex = customerInfo.EmployeeDictList[i]
                         itemIndex.DictName =Util.Parse.isChinese() ? customerInfo.EmployeeDictList[i].Name : customerInfo.EmployeeDictList[i].EnName
                     }
-                    if(customerInfo.EmployeeDictList[i].IsRequire &&customerInfo.EmployeeDictList[i].ShowInOrder){
-                            if (customerInfo.EmployeeDictList[i].NeedInput && !itemIndex.ItemName) {
-                                this.toastMsg(I18nUtil.tranlateInsert('{{noun}}不能为空', I18nUtil.translate(customerInfo.EmployeeDictList[i].Name)));
-                                return;
-                            }
+                    const isCascadeChild = customerInfo.EmployeeDictList[i].BeforeParentNameList && customerInfo.EmployeeDictList[i].BeforeParentNameList.length > 0;
+                    if(customerInfo.EmployeeDictList[i].IsRequire && (customerInfo.EmployeeDictList[i].ShowInOrder || isCascadeChild)){
+                        if (customerInfo.EmployeeDictList[i].NeedInput && !itemIndex.ItemName) {
+                            this.toastMsg(I18nUtil.tranlateInsert('{{noun}}不能为空', I18nUtil.translate(customerInfo.EmployeeDictList[i].Name)));
+                            return;
+                        } else if (!customerInfo.EmployeeDictList[i].NeedInput && !itemIndex.ItemId) {
+                            this.toastMsg(I18nUtil.tranlateInsert('{{noun}}不能为空', I18nUtil.translate(customerInfo.EmployeeDictList[i].Name)));
+                            return;
+                        }
                     }
                 }
             }
@@ -910,9 +977,14 @@ class FlightCreateOrderScreen extends SuperView {
                 }
             }
             if (diffArr) {
+                const visibleCompanyIdSet = getVisibleDictIdSet(diffArr, customerInfo.DictMapList, AdditionInfo && AdditionInfo.DictItemList);
                 for (let i = 0; i < diffArr.length; i++) {
                     const obj = diffArr[i];
-                    if (obj.IsRequire && obj.ShowInOrder) {
+                    if (!visibleCompanyIdSet.has(obj.Id)) {
+                        continue;
+                    }
+                    const isCascadeChild = obj.BeforeParentNameList && obj.BeforeParentNameList.length > 0;
+                    if (obj.IsRequire && (obj.ShowInOrder || isCascadeChild)) {
                         if (userInfo && userInfo.Customer.Id === Customer.DRHJ && obj.Name === '实施阶段') {
                             continue;
                         }
@@ -967,15 +1039,20 @@ class FlightCreateOrderScreen extends SuperView {
 
         const { sendType } = mailSendInfo;
         if (diffDicList && this.props.feeType === 1) {
+            const visibleCompanyIdSet = getVisibleDictIdSet(diffDicList, customerInfo.DictMapList, AdditionInfo && AdditionInfo.DictItemList);
             for (let i = 0; i < diffDicList.length; i++) {
                 const obj = diffDicList[i];
+                if (!visibleCompanyIdSet.has(obj.Id)) {
+                    continue;
+                }
                 let dicItem = AdditionInfo&&AdditionInfo.DictItemList&&AdditionInfo.DictItemList.find(item => 
                     // dic.DictId === obj.Id
                     // obj.NeedInput ? item.DictName === obj.Name : item.DictId === obj.Id
                     item.DictCode === obj.Code
                 );
                 let regex=new RegExp(dicItem?.FormatRegexp)
-                if (obj.IsRequire && obj.ShowInOrder) {
+                const isCascadeChild = obj.BeforeParentNameList && obj.BeforeParentNameList.length > 0;
+                if (obj.IsRequire && (obj.ShowInOrder || isCascadeChild)) {
                     if (!dicItem) {
                         this.toastMsg(I18nUtil.tranlateInsert('{{noun}}不能为空', I18nUtil.translate(obj.Name)));
                         return;
@@ -1055,14 +1132,68 @@ class FlightCreateOrderScreen extends SuperView {
             }
         }
         
-        AdditionInfo.DictItemList = list
-        AdditionInfo.DictItemList&&AdditionInfo.DictItemList.forEach(item => {
-            let index = nullDictList.findIndex(e => e.Id == item.Id)
-            if (index > -1){
-                nullDictList[index] = item
+        const dictConfigList = customerInfo && Array.isArray(customerInfo.DictList) ? customerInfo.DictList : [];
+        const flightDictConfigs = dictConfigList.filter(cfg => cfg && (cfg.BusinessCategory & 2));
+        const existCompanyDictItemList = AdditionInfo && Array.isArray(AdditionInfo.DictItemList) ? AdditionInfo.DictItemList : [];
+        const nullCompanyDictList = flightDictConfigs.map((item) => ({
+            DictCode: item.Code,
+            DictEnName: item.EnName,
+            DictId: item.Id,
+            DictName: item.Name,
+            FormatRegexp: item.FormatRegexp,
+            Id: item.Id,
+            ItemEnName: null,
+            ItemId: "",
+            ItemInput: "",
+            ItemName: "",
+            NeedInput: item.NeedInput,
+            Remark: item.Remark,
+            RemarkNo: item.RemarkNo,
+            NextId: item.NextId,
+            ShowInOrder: item.ShowInOrder,
+            BusinessCategory: item.BusinessCategory,
+        }));
+        existCompanyDictItemList.forEach((it) => {
+            if (!it) return;
+            const dictId = it.DictId || it.Id;
+            let index = -1;
+            if (dictId !== undefined && dictId !== null) {
+                index = nullCompanyDictList.findIndex(e => e && (e.Id == dictId || e.DictId == dictId));
             }
-        })
-        AdditionInfo.DictItemList = nullDictList
+            if (index === -1 && it.DictCode !== undefined) {
+                index = nullCompanyDictList.findIndex(e => e && e.DictCode == it.DictCode);
+            }
+            if (index > -1) {
+                const base = nullCompanyDictList[index];
+                nullCompanyDictList[index] = {
+                    ...base,
+                    ...it,
+                    Id: base.Id,
+                    DictId: base.DictId,
+                    DictCode: base.DictCode,
+                    DictName: base.DictName,
+                    DictEnName: base.DictEnName,
+                    NeedInput: base.NeedInput,
+                    NextId: base.NextId,
+                    ShowInOrder: base.ShowInOrder,
+                    FormatRegexp: base.FormatRegexp,
+                    Remark: base.Remark,
+                    RemarkNo: base.RemarkNo,
+                    BusinessCategory: base.BusinessCategory,
+                };
+            }
+        });
+        const childIdSet = new Set();
+        flightDictConfigs.forEach((cfg) => {
+            if (cfg && cfg.NextId) childIdSet.add(cfg.NextId);
+        });
+        const visibleCompanyIdSet = getVisibleDictIdSet(flightDictConfigs, customerInfo && customerInfo.DictMapList, nullCompanyDictList);
+        AdditionInfo.DictItemList = nullCompanyDictList.filter((it) => {
+            const dictId = it && (it.DictId || it.Id);
+            if (!dictId) return false;
+            if (!childIdSet.has(dictId)) return true;
+            return visibleCompanyIdSet && visibleCompanyIdSet.has(dictId);
+        });
         if(InvoiceInfo){
             InvoiceInfo.ReceiveEmail = ReceiveEmail
         }

@@ -54,6 +54,26 @@ export default class WebViewScreen extends React.Component {
         }
     }
 
+    _getHost = (url) => {
+        if (!url) return '';
+        try {
+            return String(url)
+                .replace(/^https?:\/\//i, '')
+                .split('/')[0]
+                .split('?')[0]
+                .split('#')[0]
+                .toLowerCase();
+        } catch (e) {
+            return '';
+        }
+    }
+
+    _shouldEnableDomStorage = (url) => {
+        const host = this._getHost(url);
+        if (!host) return false;
+        return host === 'flights.cathaypacific.com' || host.endsWith('.cathaypacific.com');
+    }
+
     render() {
         const { url } = this.state;
 
@@ -71,6 +91,7 @@ export default class WebViewScreen extends React.Component {
     }
 
     _renderWebView = () => {
+        const enableDomStorage = this._shouldEnableDomStorage(this.state.url);
             return (<WebView
                 useWebKit={true}
                 // domStorageEnabled={true}
@@ -80,11 +101,11 @@ export default class WebViewScreen extends React.Component {
                 startInLoadingState={true}
                 onNavigationStateChange={e => this.onNavigationStateChange(e)}
                 source={{ uri: this.state.url, }}
-                sharedCookiesEnabled={false}
+                sharedCookiesEnabled={enableDomStorage}
                 allowFileAccess = {false}  
                 // javaScriptEnabled = {false} //Webview File同源策略绕过漏洞
                 saveFormDataDisabled = {true} //Webview明文存储密码风险
-                domStorageEnabled={false}
+                domStorageEnabled={enableDomStorage}
                 remoteDebuggingEnabled = {false}
             />)
         

@@ -21,9 +21,11 @@ let itemIndex;
 class AdditionInfoView extends React.Component {
     constructor(props) {
         super(props);
-        this.state={
-            item_index:{}
-        }
+        this._cascadeSeedSig = null;
+        this.state = {
+            item_index: {},
+            ...this._calcDiffState(props),
+        };
     }
     static propTypes = {
         AdditionIfo: PropTypes.object.isRequired,
@@ -31,6 +33,213 @@ class AdditionInfoView extends React.Component {
         userInfo: PropTypes.object.isRequired,
         ApproveOrigin: PropTypes.object.isRequired,
         DicList: PropTypes.array
+    }
+
+    _calcDiffState = (props) => {
+        const { customerInfo, fromNo } = props || {};
+        if (!customerInfo || !customerInfo.Setting) {
+            return { diffArr: [], diffDicList: [] };
+        }
+
+        const customerDicList = customerInfo.DictList || [];
+        const employeeDictList = customerInfo.EmployeeDictList || [];
+
+        const dicListArr = customerDicList.map(item => item.Id);
+        const employeeArr = employeeDictList.map(item => item.Id);
+        console.log('dicListArr', customerDicList);
+        let diffArr;
+        if (fromNo === 128) {
+            diffArr = dicListArr;
+        } else {
+            diffArr = dicListArr.filter(val => employeeArr.indexOf(val) === -1);
+        }
+
+        const nextIdArr = [];
+        const diffDicList = [];
+        customerDicList.forEach(item => {
+            if (diffArr.indexOf(item.Id) !== -1) {
+                if (item.NextId) nextIdArr.push(item.NextId);
+                item.showNext = true;
+                item.BeforeParentNameList = [];
+                diffDicList.push(item);
+            }
+        });
+
+        diffDicList.forEach(item => {
+            if (nextIdArr.indexOf(item.Id) !== -1) {
+                item.showNext = false;
+            }
+        });
+
+        return { diffArr, diffDicList };
+    }
+
+    componentDidMount() {
+        this._syncCascadeFromAdditionInfo();
+    }
+
+    componentDidUpdate(prevProps) {
+        const prevCustomer = prevProps && prevProps.customerInfo;
+        const nextCustomer = this.props && this.props.customerInfo;
+        const fromNoChanged = prevProps && prevProps.fromNo !== this.props.fromNo;
+
+        if (prevCustomer !== nextCustomer || fromNoChanged) {
+            const nextState = this._calcDiffState(this.props);
+            this._cascadeSeedSig = null;
+            this.setState(nextState, () => {
+                this._syncCascadeFromAdditionInfo();
+            });
+            return;
+        }
+
+        const prevDicList = prevProps && prevProps.DicList;
+        const nextDicList = this.props && this.props.DicList;
+        const dicListChanged = prevDicList !== nextDicList;
+        const additionChanged = prevProps && prevProps.AdditionIfo !== this.props.AdditionIfo;
+        if (dicListChanged || additionChanged) {
+            this._cascadeSeedSig = null;
+            this._syncCascadeFromAdditionInfo();
+        }
+    }
+
+    _syncCascadeFromAdditionInfo = () => {
+        const { AdditionIfo, customerInfo } = this.props;
+        const { diffDicList } = this.state;
+        const DicList = this.props.DicList;
+        const workDicList = (DicList && DicList.length > 0) ? DicList : diffDicList;
+        if (!workDicList || workDicList.length === 0) return;
+        if (!AdditionIfo || !Array.isArray(AdditionIfo.DictItemList)) return;
+
+        const dictItems = AdditionIfo.DictItemList;
+        const seedSig = [
+            (customerInfo && customerInfo.Customer && customerInfo.Customer.Id) || '',
+            (this.props && this.props.fromNo) || '',
+            (workDicList && workDicList.length) || 0,
+            dictItems.map(it => `${it && (it.DictId || it.DictCode) || ''}:${it && it.ItemName || ''}`).join('|')
+        ].join('::');
+        if (this._cascadeSeedSig === seedSig) return;
+        this._cascadeSeedSig = seedSig;
+
+        const dictMapList = (customerInfo && customerInfo.DictMapList) ? customerInfo.DictMapList : [];
+
+        const nextIdArr = [];
+        workDicList.forEach(i => {
+            if (i && i.NextId) nextIdArr.push(i.NextId);
+        });
+        if (DicList && DicList.length > 0) {
+            workDicList.forEach(obj => {
+                if (!obj) return;
+                obj.showNext = (nextIdArr.indexOf(obj.Id) === -1);
+                obj.BeforeParentName = undefined;
+                obj.BeforeParentNameList = [];
+            });
+        } else {
+            workDicList.forEach(obj => {
+                if (!obj) return;
+                obj.showNext = true;
+                obj.BeforeParentName = undefined;
+                obj.BeforeParentNameList = [];
+            });
+            workDicList.forEach(obj => {
+                if (!obj) return;
+                if (nextIdArr.indexOf(obj.Id) !== -1) {
+                    obj.showNext = false;
+                }
+            });
+        }
+
+        const findDicItem = (obj) => {
+            if (!obj) return null;
+            return dictItems.find(item =>
+                (obj.Code !== undefined && item && item.DictCode == obj.Code) || (item && item.DictId === obj.Id)
+            ) || null;
+        };
+
+        let changed = false;
+        let progressed = true;
+        while (progressed) {
+            progressed = false;
+            workDicList.forEach(parentObj => {
+                if (!parentObj || !parentObj.NextId) return;
+                if (parentObj.showNext !== true) return;
+                if (!DicList || DicList.length === 0) {
+                    const fromNo = this.props && this.props.fromNo;
+                    if (!(parentObj.BusinessCategory & fromNo)) return;
+                    const isCascadeChild = parentObj.BeforeParentNameList && parentObj.BeforeParentNameList.length > 0;
+                    if (!(parentObj.ShowInOrder || isCascadeChild)) return;
+                }
+                const parentDic = findDicItem(parentObj);
+                const parentName = parentDic && parentDic.ItemName;
+                if (!parentName) return;
+                const nextId = parentObj.NextId;
+                const rules = dictMapList.filter(m => m && m.DictId == nextId);
+                if (!rules || rules.length === 0) return;
+                if (!rules.some(m => m && m.ParentName == parentName)) return;
+                const childObj = workDicList.find(d => d && d.Id == nextId);
+                if (!childObj) return;
+                if (childObj.showNext !== true) {
+                    childObj.showNext = true;
+                    progressed = true;
+                    changed = true;
+                }
+                if (childObj.BeforeParentName !== parentName) {
+                    childObj.BeforeParentName = parentName;
+                    childObj.BeforeParentNameList = [parentName];
+                    changed = true;
+                }
+            });
+        }
+
+        if (changed) {
+            this.setState({});
+        }
+    }
+
+    _clearCascadeByNextId = (nextId) => {
+        if (!nextId) return;
+        const { AdditionIfo } = this.props;
+        const { diffDicList } = this.state;
+        const workDicList = (this.props.DicList && this.props.DicList.length > 0) ? this.props.DicList : diffDicList;
+
+        let curId = nextId;
+        while (curId) {
+            if (AdditionIfo && AdditionIfo.DictItemList && AdditionIfo.DictItemList.length > 0) {
+                for (let i = AdditionIfo.DictItemList.length - 1; i >= 0; i--) {
+                    if (AdditionIfo.DictItemList[i] && AdditionIfo.DictItemList[i].DictId == curId) {
+                        AdditionIfo.DictItemList.splice(i, 1);
+                    }
+                }
+            }
+
+            const curObj = workDicList && workDicList.find(item => item && item.Id == curId);
+            if (curObj) {
+                curObj.showNext = false;
+                curObj.BeforeParentName = undefined;
+                curObj.BeforeParentNameList = [];
+                curId = curObj.NextId;
+            } else {
+                curId = undefined;
+            }
+        }
+    }
+
+    _clearSelectedDic = (obj) => {
+        if (!obj) return;
+        const { AdditionIfo } = this.props;
+        if (obj.NextId) {
+            this._clearCascadeByNextId(obj.NextId);
+        }
+        if (AdditionIfo && Array.isArray(AdditionIfo.DictItemList) && AdditionIfo.DictItemList.length > 0) {
+            for (let i = AdditionIfo.DictItemList.length - 1; i >= 0; i--) {
+                const it = AdditionIfo.DictItemList[i];
+                if (!it) continue;
+                if ((obj.Code !== undefined && it.DictCode == obj.Code) || it.DictId == obj.Id) {
+                    AdditionIfo.DictItemList.splice(i, 1);
+                    break;
+                }
+            }
+        }
+        this.setState({});
     }
 
     _valueCHange = (text, obj) => {
@@ -68,46 +277,71 @@ class AdditionInfoView extends React.Component {
     }
     _toSelectDicList = (obj) => {
         if(!obj){return}
-        const { AdditionIfo } = this.props;
+        const { AdditionIfo, customerInfo } = this.props;
+        const { diffDicList } = this.state;
+        const workDicList = (this.props.DicList && this.props.DicList.length > 0) ? this.props.DicList : diffDicList;
+        let DictMapList = customerInfo?.DictMapList||[];
+        //过滤出DictMapList中 item.DictId == obj.NextId 的所有项
+        let nextItems = DictMapList.filter(item => item.DictId == obj.NextId);
         NavigationUtils.push(this.props.navigation, 'DicList', {
             title: Util.Parse.isChinese()?obj.Name:obj.EnName,
             Id: obj.Id,
-            ParentValue:obj.parentValue,
+            ParentValue:obj.BeforeParentName,
             callBack: (data) => {
                 let dic = AdditionIfo&&AdditionIfo.DictItemList&&AdditionIfo.DictItemList.find(item => item.DictId === obj.Id);
-                if(obj.NextId){
-                    AdditionIfo.DictItemList.forEach(itemDic => {
-                        if(itemDic.DictId == obj.NextId){
-                            itemDic.parentValue = data.Name
+                const prevSelectName = dic ? dic.ItemName : undefined;
+                const isChanged = prevSelectName !== undefined && prevSelectName !== data.Name;
+                if (isChanged && obj.NextId) {
+                    this._clearCascadeByNextId(obj.NextId);
+                }
+                //nextItems中ParentName和data.Name相同的所有项
+                let nextItemsSame = nextItems.filter(item => item.ParentName == data.Name);
+                if(nextItemsSame.length > 0){
+                    workDicList.forEach(item => {
+                        if(item.Id == nextItemsSame?.[0]?.DictId){
+                            item.showNext = true;
+                            item.BeforeParentName = data.Name;
+                            item.BeforeParentNameList = [data.Name];
+                        }
+                    })
+                }else{
+                    workDicList.forEach(item => {
+                        if(item.Id == obj.NextId){
+                            item.showNext = false;
+                            item.BeforeParentName = undefined;
+                            item.BeforeParentNameList = [];
                         }
                     })
                 }
                 if (dic) {
-                    dic.ItemId = data.DictId;
-                    dic.Id = data.DictId;
+                    dic.DictId = obj.Id;
+                    dic.Id = obj.Id;
+                    dic.DictName = obj.Name;
+                    dic.DictEnName = obj.EnName;
+                    dic.ItemId = data.Id;
                     dic.ItemSerialNumber = data.SerialNumber;
                     dic.ItemName = data.Name;
                     dic.ItemEnName = data.EnName;
                     dic.EnName = obj.EnName;
-                    dic.DictEnName = obj.EnName;
                     dic.ItemInput = data.SerialNumber+" - "+data.Name+" - "+data.EnName;
                     dic.DictCode = obj.Code
                     dic.NeedInput = obj.NeedInput
                 } else {
                     let model = {
-                        DictId: data.DictId,
-                        Id: data.DictId,
-                        DictName: data.Name,
-                        EnName: data.EnName,
-                        DictEnName:data.EnName,
+                        DictId: obj.Id,
+                        Id: obj.Id,
+                        DictName: obj.Name,
+                        EnName: obj.EnName,
+                        DictEnName: obj.EnName,
                         ItemId: data.Id,
                         ItemSerialNumber: data.SerialNumber,
                         ItemName: data.Name,
-                        ItemEnName:data.EnName,
+                        ItemEnName: data.EnName,
                         RemarkNo:obj.RemarkNo,
                         ItemInput:data.SerialNumber+" - "+data.Name+" - "+data.EnName,
                         DictCode: obj.Code,
-                        NeedInput:obj.NeedInput
+                        NeedInput:obj.NeedInput,
+                        BeforeParentName: obj.BeforeParentName
                     }
                     AdditionIfo&&AdditionIfo.DictItemList.push(model);
                 }
@@ -118,33 +352,9 @@ class AdditionInfoView extends React.Component {
     }
     render() {
         const { AdditionIfo, customerInfo, userInfo, ApproveOrigin, DicList,fromNo,PdfDictList } = this.props;
+        const { diffDicList,diffArr } = this.state;
         if (!customerInfo || !customerInfo.Setting) return null;
         let additonArr = UserInfoUtil.Addition(customerInfo);
-        let customerDicList = customerInfo.DictList;//公司字典项列表
-        let DicListArr=[];//储存公司字典项Id
-        let EmployeeDictListArr=[]//储存个人字典项Id
-        let diffDicList = [];
-        customerDicList&&customerDicList.map((item)=>{
-            DicListArr.push(item.Id);
-        })
-        customerInfo.EmployeeDictList&&customerInfo.EmployeeDictList.map((item)=>{
-            EmployeeDictListArr.push(item.Id);
-        })
-        let diffArr;
-        if(fromNo===128){
-            diffArr = DicListArr
-        }else{
-            diffArr = DicListArr.filter(function (val) { //算出公司字典和用户字典的差集Id：公司字典含有的、用户字典没有含有的 展示在公司字典处
-                return EmployeeDictListArr&&EmployeeDictListArr.indexOf(val)===-1
-            })
-        }
-        customerDicList&&customerDicList.map((item)=>{
-            diffArr&&diffArr.map((diffitem)=>{
-                if(item.Id == diffitem){
-                    diffDicList.push(item)
-                }
-            })
-        })
         if(PdfDictList&&PdfDictList.length>0){
             PdfDictList.forEach((pdfItem,index)=>{
                 AdditionIfo.DictItemList.forEach((item,index)=>{
@@ -194,9 +404,10 @@ class AdditionInfoView extends React.Component {
                                 itemIndex.ShowInOrder = obj.ShowInOrder
                                 itemIndex.DictCode = obj.Code
                                 itemIndex.NeedInput = obj.NeedInput
-                           }
+                            }
+                            const isCascadeChild = obj.BeforeParentNameList && obj.BeforeParentNameList.length > 0;
                             return (
-                                obj.BusinessCategory&fromNo && obj.ShowInOrder? //判断指定业务
+                                obj.BusinessCategory&fromNo && obj.showNext && (obj.ShowInOrder || isCascadeChild)? //判断指定业务
                                 <View key={index} style={styles.row}>
                                     <InfoDicView index={index} 
                                                 obj={obj} 
@@ -206,6 +417,9 @@ class AdditionInfoView extends React.Component {
                                                 }}
                                                 select_DicList={()=>{
                                                     this._toSelectDicList(obj)
+                                                }}
+                                                clear_DicList={()=>{
+                                                    this._clearSelectedDic(obj)
                                                 }}
                                     />
                                 </View>
@@ -228,7 +442,7 @@ class AdditionInfoView extends React.Component {
                                 //                 <CustomText text={itemIndex ? (Util.Parse.isChinese()?itemIndex.ItemName:itemIndex.ItemEnName) :(Util.Parse.isChinese()? obj.Remark: obj.EnRemark)} 
                                 //                             style={{ color: itemIndex ? Theme.commonFontColor: '#ccc', flex: 1, paddingTop:10,fontSize:14}} 
                                 //                             onPress={this._toSelectDicList.bind(this, obj)} />
-                                //                 <Ionicons name={'chevron-forward'} size={22} color={'lightgray'} style={{height:40,paddingTop:9}} />
+                                //                 <Ionicons name={'ios-arrow-forward'} size={22} color={'lightgray'} style={{height:40,paddingTop:9}} />
                                 //             </View>
                                 //     }
                                 // </View>
@@ -240,8 +454,18 @@ class AdditionInfoView extends React.Component {
                 {
                     DicList && DicList.length > 0 ?//申请单
                         DicList.map((obj, index) => {
-                            let itemIndex =AdditionIfo&&AdditionIfo.DictItemList&&AdditionIfo.DictItemList.find(item => item.DictId === obj.Id);
+                            const nextIdArr = [];
+                            DicList.forEach(i => {
+                                if (i && i.NextId) nextIdArr.push(i.NextId);
+                            });
+                            const showNext = (obj.showNext === undefined || obj.showNext === null)
+                                ? (nextIdArr.indexOf(obj.Id) === -1)
+                                : obj.showNext;
+                            let itemIndex =AdditionIfo&&AdditionIfo.DictItemList&&AdditionIfo.DictItemList.find(item =>
+                                (obj.Code !== undefined && item.DictCode == obj.Code) || item.DictId === obj.Id
+                            );
                             return (
+                                showNext ?
                                 <View key={index} style={styles.row}>
                                 <InfoDicView index={index} 
                                             obj={obj} 
@@ -252,9 +476,13 @@ class AdditionInfoView extends React.Component {
                                             select_DicList={()=>{
                                                 this._toSelectDicList(obj)
                                             }}
+                                            clear_DicList={()=>{
+                                                this._clearSelectedDic(obj)
+                                            }}
                                             editable={true}
                                 />
                                 </View>
+                                : null
                                 // <View key={index} style={styles.row}>
                                 //     {/* <CustomText text={obj.Name} style={{ flex: 3 }} /> */}
                                 //     {obj.IsRequire?<HighLight name={obj.Name} value={itemIndex}/>:<CustomText text={obj.Name} style={{ flex: 3 }} />}
@@ -270,7 +498,7 @@ class AdditionInfoView extends React.Component {
                                 //             <View style={{ justifyContent:'center' ,flexDirection:'row',borderColor:obj.IsRequire&& !(itemIndex&&itemIndex.ItemName)?Theme.redColor:'#fff',borderBottomWidth:1}}>
                                 //                 <CustomText text={itemIndex ? itemIndex.ItemName : obj.Remark} style={{ color: itemIndex ? Theme.commonFontColor: '#ccc', flex: 1, paddingTop:10,fontSize:14}} 
                                 //                 onPress={this._toSelectDicList.bind(this, itemIndex)} />
-                                //                 <Ionicons name={'chevron-forward'} size={20} color={'lightgray'} />
+                                //                 <Ionicons name={'ios-arrow-forward'} size={20} color={'lightgray'} />
                                 //             </View>
                                 //     }
                                 // </View>

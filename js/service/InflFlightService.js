@@ -241,4 +241,16 @@ export default class InflFlightService {
     static getIntlFlightQueryByPriceI (model) { 
         return FetchHelper.post(baseUrl + api.inflFlight.getIntlFlightQueryByPriceI, model);
     }
+    static FlightOrderPnrSeatInfo (model) { 
+        return FetchHelper.post(baseUrl + api.inflFlight.FlightOrderPnrSeatInfo, model);
+    }
+    static FlightOrderSeatMap (model) { 
+        return FetchHelper.post(baseUrl + api.inflFlight.FlightOrderSeatMap, model);
+    }
+    static FlightOrderSeatChoose (model) { 
+        return FetchHelper.post(baseUrl + api.inflFlight.FlightOrderSeatChoose, model);
+    }
+    static FlightOrderSeatDelete (model) { 
+        return FetchHelper.post(baseUrl + api.inflFlight.FlightOrderSeatDelete, model);
+    }
 }

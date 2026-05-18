@@ -68,6 +68,7 @@ class ApplicationSelectScreen extends SuperView {
             }
         }
         ApplicationService.travelApplyList(model).then(response => {
+            console.log('申请单列表',response)
             if (response && response.success) {
                 if (response.data && response.data.ListData && response.data.ListData.length !=0) {
                     this.state.dataList = this.state.dataList.concat(response.data.ListData);

@@ -455,9 +455,7 @@ class Flight_compCreateOrderScreen extends SuperView {
 
     _loadCurrentDicList = () => {
         const {customerInfo} = this.state;
-        let arr = customerInfo&&customerInfo.DictList&&customerInfo.DictList.filter(obj => {
-            return obj.ShowInOrder
-        })
+        let arr = customerInfo && customerInfo.DictList ? customerInfo.DictList : []
         let nullDictList = arr&&arr.map((item)=>({
             DictCode:item.Code,
             DictEnName:item.EnName,
@@ -473,7 +471,8 @@ class Flight_compCreateOrderScreen extends SuperView {
             Remark:item.Remark,
             RemarkNo:item.RemarkNo,
             NextId:item.NextId,
-            ShowInOrder:true,
+            ShowInOrder:item.ShowInOrder,
+            BusinessCategory:item.BusinessCategory,
         }))
         this.setState({
             nullDictList: nullDictList,
@@ -571,15 +570,66 @@ class Flight_compCreateOrderScreen extends SuperView {
         const { employees, travellers, customerInfo, AdditionInfo, userInfo, ApproveOrigin, Contact, mailSendInfo, MaillingInfo,ServiceFeesData, fileList, nullDictList,InvoiceInfo,PdfDictList,ReceiveEmail } = this.state;
         const { goRuleModel,goRuleModelArr, backRuleModel,backRuleModelArr, goFlightData, backFlightData} = this.params;
         const {compCreate_bool} = this.props;
+        var getVisibleDictIdSet = function (dictConfigList, dictMapList, dictItemList) {
+            var configs = dictConfigList || [];
+            var mapList = dictMapList || [];
+            var configById = {};
+            var childIdSet = new Set();
+            configs.forEach(function (cfg) {
+                if (cfg && cfg.Id !== undefined) {
+                    configById[cfg.Id] = cfg;
+                }
+                if (cfg && cfg.NextId) {
+                    childIdSet.add(cfg.NextId);
+                }
+            });
+            var rootIds = [];
+            configs.forEach(function (cfg) {
+                if (cfg && cfg.Id !== undefined && !childIdSet.has(cfg.Id)) {
+                    rootIds.push(cfg.Id);
+                }
+            });
+            var visibleIdSet = new Set();
+            var visiting = new Set();
+            var visit = function (id) {
+                if (!id || visibleIdSet.has(id) || visiting.has(id)) return;
+                visiting.add(id);
+                visibleIdSet.add(id);
+                var cfg = configById[id];
+                var nextId = cfg && cfg.NextId;
+                if (nextId) {
+                    var parentItem = dictItemList && dictItemList.find(function (it) {
+                        if (!it) return false;
+                        if (cfg && cfg.Code !== undefined && it.DictCode == cfg.Code) return true;
+                        return it.DictId == id;
+                    });
+                    var parentName = parentItem && parentItem.ItemName;
+                    var rules = mapList && mapList.filter(function (m) { return m && m.DictId == nextId; });
+                    if (!rules || rules.length === 0) {
+                        visit(nextId);
+                    } else if (parentName && rules.some(function (m) { return m && m.ParentName == parentName; })) {
+                        visit(nextId);
+                    }
+                }
+                visiting.delete(id);
+            };
+            rootIds.forEach(function (id) { visit(id); });
+            return visibleIdSet;
+        };
         if (customerInfo.DictList) {
+            const visibleCompanyIdSet = getVisibleDictIdSet(customerInfo.DictList, customerInfo.DictMapList, AdditionInfo && AdditionInfo.DictItemList);
             for (let i = 0; i < customerInfo.DictList.length; i++) {
                 const obj = customerInfo.DictList[i];
+                if (!visibleCompanyIdSet.has(obj.Id)) {
+                    continue;
+                }
                 let dicItem = AdditionInfo&&AdditionInfo.DictItemList&&AdditionInfo.DictItemList.find(item => 
                     // obj.NeedInput ? item.DictName === obj.Name : item.DictId === obj.Id
                     item.DictCode === obj.Code
                 );
                 let regex=new RegExp(dicItem?.FormatRegexp)
-                if (obj.IsRequire && obj.ShowInOrder) {
+                const isCascadeChild = obj.BeforeParentNameList && obj.BeforeParentNameList.length > 0;
+                if (obj.IsRequire && (obj.ShowInOrder || isCascadeChild)) {
                     if (!dicItem) {
                         this.toastMsg(I18nUtil.tranlateInsert('{{noun}}不能为空', I18nUtil.translate(obj.Name)));
                         return;
@@ -738,10 +788,16 @@ class Flight_compCreateOrderScreen extends SuperView {
                 }
                 let additionList = compCreate_bool ? obj.Addition : obj.AdditionInfo
                 if(customerInfo.EmployeeDictList&&customerInfo.EmployeeDictList.length>0){
+                    const visibleIdSet = getVisibleDictIdSet(customerInfo.EmployeeDictList, customerInfo.DictMapList, additionList && additionList.DictItemList);
                     for (let i = 0; i < customerInfo.EmployeeDictList.length; i++) {
-                       let itemIndex = additionList&&additionList.DictItemList&&additionList.DictItemList.find(
-                           item => item.DictId === customerInfo.EmployeeDictList[i].Id
-                       );
+                       if (!visibleIdSet.has(customerInfo.EmployeeDictList[i].Id)) {
+                           continue;
+                       }
+                       let itemIndex = additionList&&additionList.DictItemList&&additionList.DictItemList.find(item => {
+                           if (!item) return false;
+                           if (customerInfo.EmployeeDictList[i].Code !== undefined && item.DictCode == customerInfo.EmployeeDictList[i].Code) return true;
+                           return item.DictId == customerInfo.EmployeeDictList[i].Id;
+                       });
                        if(!itemIndex){
                            itemIndex = customerInfo.EmployeeDictList[i]
                            itemIndex.DictName =Util.Parse.isChinese() ? customerInfo.EmployeeDictList[i].Name : customerInfo.EmployeeDictList[i].EnName
@@ -782,7 +838,6 @@ class Flight_compCreateOrderScreen extends SuperView {
                         return;
                     }
                 }
-
                 TravellerList.push({
                     Sex: obj.Sex?obj.Sex:obj.Gender?obj.Gender:1,
                     Name: obj.Name,
@@ -873,10 +928,16 @@ class Flight_compCreateOrderScreen extends SuperView {
 
                 let additionList = compCreate_bool ? obj.Addition : obj.AdditionInfo
                if(customerInfo.EmployeeDictList&&customerInfo.EmployeeDictList.length>0){
+                    const visibleIdSet = getVisibleDictIdSet(customerInfo.EmployeeDictList, customerInfo.DictMapList, additionList && additionList.DictItemList);
                     for (let i = 0; i < customerInfo.EmployeeDictList.length; i++) {
-                        let itemIndex =  additionList&&additionList.DictItemList&&additionList.DictItemList.find(
-                            item => item.DictId === customerInfo.EmployeeDictList[i].Id
-                        );
+                        if (!visibleIdSet.has(customerInfo.EmployeeDictList[i].Id)) {
+                            continue;
+                        }
+                        let itemIndex =  additionList&&additionList.DictItemList&&additionList.DictItemList.find(item => {
+                            if (!item) return false;
+                            if (customerInfo.EmployeeDictList[i].Code !== undefined && item.DictCode == customerInfo.EmployeeDictList[i].Code) return true;
+                            return item.DictId == customerInfo.EmployeeDictList[i].Id;
+                        });
                         if(!itemIndex){
                             itemIndex = customerInfo.EmployeeDictList[i]
                             itemIndex.DictName =Util.Parse.isChinese() ? customerInfo.EmployeeDictList[i].Name : customerInfo.EmployeeDictList[i].EnName
@@ -889,7 +950,7 @@ class Flight_compCreateOrderScreen extends SuperView {
                         }
                     }
                }
-               obj.CertificateType = obj.CertificateType.trim()
+                obj.CertificateType = obj.CertificateType.trim()
                 let TypeCer = Util.Read.certificateType2(obj.CertificateType)
                 let CHName = TypeCer === 1 || (TypeCer === 32768 && obj.NationalCode==="CN")|| TypeCer === 512
                 let CHName2 = (TypeCer == 2 && obj.NationalCode == "CN")
@@ -973,13 +1034,44 @@ class Flight_compCreateOrderScreen extends SuperView {
             referencEmployeeId = userInfo.Id
         }
 
-        AdditionInfo.DictItemList&&AdditionInfo.DictItemList.forEach(item => {
-            let index = nullDictList.findIndex(e => e.Id == item.Id)
-            if (index > -1){
-                nullDictList[index] = item
+        const childIdSet = new Set();
+        customerInfo && Array.isArray(customerInfo.DictList) && customerInfo.DictList.forEach((cfg) => {
+            if (cfg && cfg.NextId) childIdSet.add(cfg.NextId);
+        });
+        const visibleCompanyIdSet = getVisibleDictIdSet(customerInfo && customerInfo.DictList, customerInfo && customerInfo.DictMapList, AdditionInfo && AdditionInfo.DictItemList);
+        const baseCompanyDictList = customerInfo && Array.isArray(customerInfo.DictList) ? customerInfo.DictList : [];
+        const nullDictList2 = baseCompanyDictList.map((item) => ({
+            DictCode: item.Code,
+            DictEnName: item.EnName,
+            DictId: item.Id,
+            DictName: item.Name,
+            FormatRegexp: item.FormatRegexp,
+            Id: item.Id,
+            ItemEnName: null,
+            ItemId: "",
+            ItemInput: "",
+            ItemName: "",
+            NeedInput: item.NeedInput,
+            Remark: item.Remark,
+            RemarkNo: item.RemarkNo,
+            NextId: item.NextId,
+            ShowInOrder: item.ShowInOrder,
+            BusinessCategory: item.BusinessCategory,
+        }));
+        AdditionInfo.DictItemList && AdditionInfo.DictItemList.forEach(item => {
+            const dictId = item && (item.DictId || item.Id);
+            if (!dictId) return;
+            let index = nullDictList2.findIndex(e => e && e.Id == dictId);
+            if (index > -1) {
+                nullDictList2[index] = Object.assign({}, nullDictList2[index], item);
             }
         })
-        AdditionInfo.DictItemList = nullDictList
+        AdditionInfo.DictItemList = nullDictList2.filter((it) => {
+            const dictId = it && (it.DictId || it.Id);
+            if (!dictId) return false;
+            if (!childIdSet.has(dictId)) return true;
+            return visibleCompanyIdSet && visibleCompanyIdSet.has(dictId);
+        })
         if(InvoiceInfo){
             InvoiceInfo.ReceiveEmail = ReceiveEmail
         }
@@ -1548,13 +1640,6 @@ class Flight_compCreateOrderScreen extends SuperView {
                             fromNo = {2}//国内飞机 BusinessCategory
                             PdfDictList={fileList&&fileList.length>0 ? PdfDictList :null}
                     />
-                     {/* <View style={{ flex: 6,height:40,justifyContent:'center' ,flexDirection:'row', marginTop:10}}>
-                                                <CustomText text={'0000'} 
-                                                            style={{ color:'gray', flex: 1 ,backgroundColor:'#fff',height:40, paddingTop:10
-                                                }} 
-                                                            onPress={()=>{}} />
-                                                <Ionicons name={'chevron-forward'} size={22} color={'lightgray'} style={{backgroundColor:'#fff',height:40,paddingTop:9}} />
-                                            </View> */}
                     {
                         customerInfo&&customerInfo.Setting&&customerInfo.Setting.AttachmentConfig&&customerInfo.Setting.AttachmentConfig.AirContainsAttachment//判断上传附件是否展示
                         ?
@@ -1588,7 +1673,6 @@ class Flight_compCreateOrderScreen extends SuperView {
                                                 <CustomText text='打开相册或相机' style={{color: Theme.theme }} />
                                             </TouchableOpacity>}
                                     </View>
-                                    {/* <Ionicons name={'chevron-forward'} size={22} color={'lightgray'} style={{ marginLeft: 5 }} /> */}
                             </View>
                             <View style={{ backgroundColor: 'white',justifyContent:'space-between',marginTop:10}}>
                                     <CustomText text={'单个文件最大5MB，数量最多5个，格式为:'} style={{fontSize:11, color:'red'}} ></CustomText>
@@ -1655,7 +1739,7 @@ class Flight_compCreateOrderScreen extends SuperView {
                     <TouchableHighlight underlayColor='transparent' onPress={this._showPriceDetail}>
                         <View style={{ flexDirection: "row", flex: 1, justifyContent: "flex-end", alignItems: "center", height: 50 }}>
                             <CustomText style={{ fontSize: 12, color: 'gray' }} text='明细' />
-                            <Ionicons name={showPriceDetail ? 'chevron-up' : 'chevron-down'} size={16} color={'gray'} style={{ marginLeft:2 }} />
+                            <Ionicons name={showPriceDetail ? 'chevron-up' : 'chevron-down'} size={16} color={'gray'} style={{ marginLeft: 2 }} />
                         </View>
                     </TouchableHighlight>
                     <TouchableHighlight underlayColor='transparent' onPress={this._comp_orderBtnClick}>

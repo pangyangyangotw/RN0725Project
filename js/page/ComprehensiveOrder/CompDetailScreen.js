@@ -9,7 +9,8 @@ import {
     Image,
     Modal,
     DeviceEventEmitter,
-    Text
+    Text,
+    InteractionManager
 } from 'react-native';
 import SuperView from '../../super/SuperView';
 import CustomText from '../../custom/CustomText';
@@ -160,8 +161,10 @@ class CompDetailScreen extends SuperView {
         if (!this.state.isStop) {
             this.pop();
         }else{
-            DeviceEventEmitter.emit('deleteApply', {});
             NavigationUtils.popToTop(this.props.navigation);
+            InteractionManager.runAfterInteractions(() => {
+                DeviceEventEmitter.emit('deleteApply', {});
+            });
         }
         return true;
     }
@@ -940,7 +943,7 @@ class CompDetailScreen extends SuperView {
              if(item.Category == 4 || item.Category == 6){//业务包含国内酒店或者国际酒店时
                  haveHotel = true;
              }
-         })
+         })    
          let DicList1 = []
          if(baseInfo.AdditionInfo&&baseInfo.AdditionInfo.length>0 && baseInfo.ApplyId==0){
             baseInfo.AdditionInfo={
@@ -1083,10 +1086,6 @@ class CompDetailScreen extends SuperView {
                     {
                         baseInfo.Status===6?
                             <TouchableOpacity style={styles.btnStyle} onPress={()=>{
-                                if(!TradeNumber){
-                                    this.toastMsg('获取支付单号失败');
-                                    return;
-                                }
                                 this.push('CompPaymentScreen',{TradeNumber:TradeNumber,OrderItems:baseInfo.OrderItems,Travellers:baseInfo.Travellers})
                             }}>
                             <CustomText text='付款' style={{color:'#fff',fontSize:16}}/>
@@ -1570,33 +1569,216 @@ class CompDetailScreen extends SuperView {
                  haveHotel = true;
              }
         })
-        if(baseInfo.AdditionInfo&& baseInfo.AdditionInfo.DictItemList&&baseInfo.AdditionInfo.DictItemList.length>0){
-            let shouldReturn = baseInfo.AdditionInfo.DictItemList.some((item) => {
-                if(customerInfo.CustomerHandleName==="Ontheway.TMC.CustomerHandlers.Shell.ShellHandler"&& item.DictName==="approver's email address" && !NoApproval && customerInfo.selectedNeed){
-                    if(!item.ItemName){
-                        this.toastMsg('请输入审批人邮箱');
-                        return true;
-                    }
-                }else if(item.IsRequire && item.ShowInOrder){
-                    if(!haveHotel || !item.IsShowWhenMissingHotelUnitInMassOrder){
-                        if(!item.ItemName){
-                            this.toastMsg(item.DictName + '不能为空');
-                            return true;
-                        }
-                    }
-                }
-                if(item.ItemName && item.FormatRegexp){//正则提示
-                        let regex=new RegExp(item.FormatRegexp)
-                        if(!regex.test(item.ItemName)){
-                            this.toastMsg(I18nUtil.tranlateInsert('{{noun}}格式不符合规则',item.ItemName));
+        if(baseInfo.AdditionInfo){
+            const dictItemList = (baseInfo.AdditionInfo && Array.isArray(baseInfo.AdditionInfo.DictItemList)) ? baseInfo.AdditionInfo.DictItemList : [];
+            const dictConfigList = (customerInfo && Array.isArray(customerInfo.DictList)) ? customerInfo.DictList : [];
+            const dictMapList = (customerInfo && customerInfo.DictMapList) || [];
+            const fromNo = 128;
+
+            const findFilledByCfg = (cfg) => {
+                if (!cfg || !Array.isArray(dictItemList)) return undefined;
+                return dictItemList.find(it => {
+                    if (!it) return false;
+                    if (cfg.Code !== undefined && cfg.Code !== null && it.DictCode == cfg.Code) return true;
+                    return it.DictId == cfg.Id;
+                });
+            };
+
+            const getVisibleDictIdSet = (configs, mapList, filledList) => {
+                var configById = {};
+                var childIdSet = new Set();
+                (configs || []).forEach(function (cfg) {
+                    if (cfg && cfg.Id !== undefined) configById[cfg.Id] = cfg;
+                    if (cfg && cfg.NextId) childIdSet.add(cfg.NextId);
+                });
+                var rootIds = [];
+                (configs || []).forEach(function (cfg) {
+                    if (cfg && cfg.Id !== undefined && !childIdSet.has(cfg.Id) && cfg.ShowInOrder) rootIds.push(cfg.Id);
+                });
+                var visibleIdSet = new Set();
+                var visiting = new Set();
+                var visit = function (id) {
+                    if (!id || visibleIdSet.has(id) || visiting.has(id)) return;
+                    visiting.add(id);
+                    visibleIdSet.add(id);
+                    var cfg = configById[id];
+                    var nextId = cfg && cfg.NextId;
+                    if (nextId) {
+                        var parentItem = filledList && filledList.find(function (it) {
+                            if (!it) return false;
+                            if (cfg && cfg.Code !== undefined && cfg.Code !== null && it.DictCode == cfg.Code) return true;
+                            return it.DictId == id;
+                        });
+                        var parentName = parentItem && parentItem.ItemName;
+                        if (!parentName) {
+                            visiting.delete(id);
                             return;
                         }
+                        var rules = (mapList || []).filter(function (m) { return m && m.DictId == nextId; });
+                        if (rules.length === 0) {
+                            visit(nextId);
+                        } else if (rules.some(function (m) { return m && m.ParentName == parentName; })) {
+                            visit(nextId);
+                        }
+                    }
+                    visiting.delete(id);
+                };
+                rootIds.forEach(function (id) { visit(id); });
+                return visibleIdSet;
+            };
+
+            const visibleCfgIdSet = getVisibleDictIdSet(dictConfigList, dictMapList, dictItemList);
+
+            const parentByChildId = {};
+            dictConfigList.forEach((cfg) => {
+                if (cfg && cfg.NextId) parentByChildId[cfg.NextId] = cfg;
+            });
+            const shownCache = new Map();
+            const visitingShown = new Set();
+            const isCfgShown = (cfg) => {
+                if (!cfg) return false;
+                const cfgId = cfg.Id;
+                if (!cfgId) return false;
+                if (shownCache.has(cfgId)) return shownCache.get(cfgId);
+                if (visitingShown.has(cfgId)) return false;
+                visitingShown.add(cfgId);
+                if (!(cfg.BusinessCategory & fromNo)) {
+                    visitingShown.delete(cfgId);
+                    shownCache.set(cfgId, false);
+                    return false;
                 }
-                return false;
-            })
-            if (shouldReturn) {
-                return; // 如果需要退出整个函数
+                if (cfg.showNext === false) {
+                    visitingShown.delete(cfgId);
+                    shownCache.set(cfgId, false);
+                    return false;
+                }
+                const showNext = cfg.showNext === true ? true : visibleCfgIdSet.has(cfgId);
+                if (!showNext) {
+                    visitingShown.delete(cfgId);
+                    shownCache.set(cfgId, false);
+                    return false;
+                }
+                const parentCfg = parentByChildId[cfgId];
+                const shown = parentCfg ? isCfgShown(parentCfg) : !!cfg.ShowInOrder;
+                visitingShown.delete(cfgId);
+                shownCache.set(cfgId, shown);
+                return shown;
+            };
+
+            if (customerInfo.CustomerHandleName === "Ontheway.TMC.CustomerHandlers.Shell.ShellHandler" && customerInfo.selectedNeed && !NoApproval) {
+                const approvalCfg = dictConfigList.find(c => c && c.Name === "approver's email address");
+                if (approvalCfg && isCfgShown(approvalCfg)) {
+                    const approvalFilled = findFilledByCfg(approvalCfg);
+                    if (!approvalFilled || !approvalFilled.ItemName) {
+                        this.toastMsg('请输入审批人邮箱');
+                        return;
+                    }
+                }
             }
+
+            for (let i = 0; i < dictConfigList.length; i++) {
+                const cfg = dictConfigList[i];
+                if (!isCfgShown(cfg)) continue;
+                const filled = findFilledByCfg(cfg);
+                const title = cfg.Name || cfg.DictName;
+
+                if (cfg.IsRequire && (!haveHotel || !cfg.IsShowWhenMissingHotelUnitInMassOrder)) {
+                    if (!filled) {
+                        this.toastMsg(title + '不能为空');
+                        return;
+                    }
+                    if (cfg.NeedInput && !filled.ItemName) {
+                        this.toastMsg(title + '不能为空');
+                        return;
+                    }
+                    if (!cfg.NeedInput && !filled.ItemId) {
+                        this.toastMsg(title + '不能为空');
+                        return;
+                    }
+                }
+
+                const regexp = (filled && filled.FormatRegexp) || cfg.FormatRegexp;
+                if (filled && filled.ItemName && regexp) {
+                    let regex = new RegExp(regexp);
+                    if (!regex.test(filled.ItemName)) {
+                        this.toastMsg(I18nUtil.tranlateInsert('{{noun}}格式不符合规则', filled.ItemName));
+                        return;
+                    }
+                }
+            }
+
+            const submitAdditionInfo = (() => {
+                const raw = baseInfo.AdditionInfo || {};
+                const configs = dictConfigList.filter(cfg => cfg && (cfg.BusinessCategory & fromNo));
+                const existList = Array.isArray(raw.DictItemList) ? raw.DictItemList : [];
+                const nullDictList = configs.map((item) => ({
+                    DictCode: item.Code,
+                    DictEnName: item.EnName,
+                    DictId: item.Id,
+                    DictName: item.Name,
+                    FormatRegexp: item.FormatRegexp,
+                    Id: item.Id,
+                    ItemEnName: null,
+                    ItemId: "",
+                    ItemInput: "",
+                    ItemName: "",
+                    NeedInput: item.NeedInput,
+                    Remark: item.Remark,
+                    RemarkNo: item.RemarkNo,
+                    NextId: item.NextId,
+                    ShowInOrder: item.ShowInOrder,
+                    BusinessCategory: item.BusinessCategory,
+                }));
+                existList.forEach((it) => {
+                    if (!it) return;
+                    const dictId = it.DictId || it.Id;
+                    let idx = -1;
+                    if (dictId !== undefined && dictId !== null) {
+                        idx = nullDictList.findIndex(e => e && (e.Id == dictId || e.DictId == dictId));
+                    }
+                    if (idx === -1 && it.DictCode !== undefined) {
+                        idx = nullDictList.findIndex(e => e && e.DictCode == it.DictCode);
+                    }
+                    if (idx > -1) {
+                        const base = nullDictList[idx];
+                        nullDictList[idx] = {
+                            ...base,
+                            ...it,
+                            Id: base.Id,
+                            DictId: base.DictId,
+                            DictCode: base.DictCode,
+                            DictName: base.DictName,
+                            DictEnName: base.DictEnName,
+                            NeedInput: base.NeedInput,
+                            NextId: base.NextId,
+                            ShowInOrder: base.ShowInOrder,
+                            FormatRegexp: base.FormatRegexp,
+                            Remark: base.Remark,
+                            RemarkNo: base.RemarkNo,
+                            BusinessCategory: base.BusinessCategory,
+                        };
+                    }
+                });
+                const childIdSet2 = new Set();
+                configs.forEach((cfg) => {
+                    if (cfg && cfg.NextId) childIdSet2.add(cfg.NextId);
+                });
+                const shownIdSet = new Set();
+                configs.forEach((cfg) => {
+                    if (isCfgShown(cfg)) shownIdSet.add(cfg.Id);
+                });
+                return {
+                    ...raw,
+                    DictItemList: nullDictList.filter((it) => {
+                        const id = it && (it.DictId || it.Id);
+                        if (!id) return false;
+                        if (!childIdSet2.has(id)) return true;
+                        return shownIdSet.has(id);
+                    }),
+                };
+            })();
+
+            baseInfo.AdditionInfo = submitAdditionInfo;
         }
         let model={
             Id: baseInfo.Id,
@@ -1631,10 +1813,6 @@ class CompDetailScreen extends SuperView {
             if (response && response.success) {
                 // this.continuHotel();
                 if(response.code==201 && response.data){
-                    if(!response.data.TradeNumber){
-                        this.toastMsg('获取支付单号失败');
-                        return;
-                    }
                     this.push('CompPaymentScreen',
                         {TradeNumber: response.data.TradeNumber,
                             OrderItems_pay: response.data.OrderItems,
@@ -1646,8 +1824,10 @@ class CompDetailScreen extends SuperView {
                     this.showAlertView('综合订单提交成功',()=>{
                         return ViewUtil.getAlertButton("确定",()=>{
                             this.dismissAlertView();
-                            DeviceEventEmitter.emit('deleteApply', {});
                             NavigationUtils.popToTop(this.props.navigation);
+                            InteractionManager.runAfterInteractions(() => {
+                                DeviceEventEmitter.emit('deleteApply', {});
+                            });
                         })
                     })
                 }
@@ -1671,8 +1851,10 @@ class CompDetailScreen extends SuperView {
         this.showAlertView(str, () => {
             return ViewUtil.getAlertButton('暂不预订', () => {
                 this.dismissAlertView();
-                DeviceEventEmitter.emit('deleteApply', {});
                 NavigationUtils.popToTop(this.props.navigation);
+                InteractionManager.runAfterInteractions(() => {
+                    DeviceEventEmitter.emit('deleteApply', {});
+                });
             }, '继续预订酒店', () => {
                 this.dismissAlertView();
                 let compEmployees = [];
@@ -1920,7 +2102,6 @@ class CompDetailScreen extends SuperView {
                                         :
                                         <TextViewTitle title={'上传附件'} style={{marginLeft:-5,paddingVertical:10}} imgIcon={require('../../res/Uimage/shu.png')}/>
                                     }
-                                    {/* <Ionicons name={'chevron-forward'} size={22} color={'lightgray'} style={{ marginLeft: 5 }} /> */}
                                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: "space-between" }}>
                                         <TouchableOpacity style={[{ borderColor: Theme.theme }, styles.borderAll]} 
                                             onPress={()=>{

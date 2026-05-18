@@ -613,8 +613,27 @@ export default {
     "英文名只能包含字母":"English name can only contain letters",
     "英文名称只能包含字母":"English name can only contain letters",
     "本页面展示的协议房型及价格仅供参考，如遇大型展会、赛事或活动期间，价格可能无法适用，最终价格及房态以酒店确认为准。":"The room category and rate displayed on this page are for reference only, it may not be available during major exhibitions, events, or activities which shall subject to change per hotel’s confirmation.",
-    "暂无预订权限，请联系差旅顾问":"No booking permission, please contact the FCM travel consultant."
-    
-    
+    "暂无预订权限，请联系差旅顾问":"No booking permission, please contact the FCM travel consultant.",
+    "城市住宿标准":"City Accommodation Standard",
+    "当前航班无有效价格，请选择其他航班":"No valid prices available for this flight, please choose other flights.",
+    "选座不等于值机，最终座位以实际值机结果为准。\n每位旅客、每个航段，仅可选择 1 个座位。\n需先选择航段与旅客，再进行座位选择。\n已确认或未确认的座位，需先取消后，方可重新选座。":
+    "Seat selection does not equal to check-in, the final seat assignment is subject to the actual check-in result.\nEach traveler can only select 1 seat for each flight segment.\nPlease select the flight segment and traveler before selecting seats.\nFor confirmed or unconfirmed seats, you need to cancel first before re-selecting seats.",
+    "选座":"Seat Selection",
+    "航班选座须知":"Flight Seat Selection Notice",
+    "取消选座":"Cancel Seat Selection",
+    "确认座位":"Confirm Seat",
+    "请选择座位":"Please select a seat",
+    "可选":"Available",
+    "不可选":"Unavailable",
+    "已确认":"Confirmed",
+    "同行人已选座":"Seat selected by companion",
+    "未选座":"No seat selected",
+    "已选座":"Seat selected",
+    "待确认":"Pending confirmation",
+    "取消座位成功":"Seat canceled successfully",
+    "提示":"Notice",
+    "您已选定座位，如需更换，请先取消当前座位再重新选择。":"You have already selected a seat. To change it, please cancel the current seat first and then select again.",
+    "当前航段无法选座":"Current flight segment is not available for seat selection.",
+    "紧急出口":"Exit",
 
 }  

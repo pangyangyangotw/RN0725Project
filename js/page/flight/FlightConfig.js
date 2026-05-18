@@ -19,9 +19,9 @@ import FlightFilterScreen from './FlightFilterScreen';
 import FlightRuleScreen from './FlightRuleScreen';
 import FlightCreatOrderScreen from './FlightCreatOrderScreen';
 import FlightRtListScreen from './FlightRtListScreen';
-// import FlightRtRuleScreen from './FlightRtRuleScreen';
+import FlightRtRuleScreen from './FlightRtRuleScreen';
 import FlightEditPassengerScreen from './FlightEditPassengerScreen';
-// import FlightOrderSureScreen from './FlightOrderSureScreen';
+import FlightOrderSureScreen from './FlightOrderSureScreen';
 import FlightOrderListScreen from './FlightOrderListScreen';
 import FlightOrderDetailScreen from './FlightOrderDetailScreen';
 import FlightOrderRefunScreen from './FlightOrderRefunScreen';
@@ -33,8 +33,8 @@ import FlightMorePriceScreen from './FlightMorePriceScreen';
 // import FlightChangeMoreScreen from './FlightChangeMoreScreen';
 // import FlightChangeListScreen from './FlightChangeListScreen';
 import Flight_compCreatOrderScreen from './Flight_compCreatOrderScreen';
-// import Flight_compEditPassengerScreen from './Flight_compEditPassengerScreen';
-// import InvoiceListScreen from './InvoiceListScreen';
+import Flight_compEditPassengerScreen from './Flight_compEditPassengerScreen';
+import InvoiceListScreen from './InvoiceListScreen';
 import FlightTrainListScreen from './FlightTrainListScreen';
 const flightConfig = {
     FlightSearchIndex: {
@@ -62,18 +62,18 @@ const flightConfig = {
     FlightRuleScreen: {
         screen: FlightRuleScreen
     },
-    // FlightRtRule: {
-    //     screen: FlightRtRuleScreen
-    // },
+    FlightRtRule: {
+        screen: FlightRtRuleScreen
+    },
     FlightOrderScreeb: {
         screen: FlightCreatOrderScreen
     },
     FlightEditPassenger: {
         screen: FlightEditPassengerScreen
     },
-    // FlightOrderSure: {
-    //     screen: FlightOrderSureScreen
-    // },
+    FlightOrderSure: {
+        screen: FlightOrderSureScreen
+    },
     FlightOrderList: {
         screen: FlightOrderListScreen
     },
@@ -101,12 +101,12 @@ const flightConfig = {
     Flight_compCreatOrderScreen: {
         screen: Flight_compCreatOrderScreen
     },
-    // FlightCompEditPassengerScreen: {
-    //     screen: Flight_compEditPassengerScreen
-    // },
-    // InvoiceListScreen: {
-    //     screen: InvoiceListScreen
-    // },
+    FlightCompEditPassengerScreen: {
+        screen: Flight_compEditPassengerScreen
+    },
+    InvoiceListScreen: {
+        screen: InvoiceListScreen
+    },
     FlightTrainListScreen: {
         screen: FlightTrainListScreen
     },

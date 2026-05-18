@@ -84,6 +84,20 @@ class ApplicationChangeOrderScreen extends SuperView {
         ]
 
         const {applyData} = this.params;
+        let initAdditionInfo = applyData && (applyData.Addition || applyData.AdditionInfo);
+        if (typeof initAdditionInfo === 'string') {
+            try {
+                initAdditionInfo = JSON.parse(initAdditionInfo);
+            } catch (e) {
+                initAdditionInfo = null;
+            }
+        }
+        if (!initAdditionInfo || typeof initAdditionInfo !== 'object') {
+            initAdditionInfo = { DictItemList: [] };
+        }
+        if (!Array.isArray(initAdditionInfo.DictItemList)) {
+            initAdditionInfo.DictItemList = [];
+        }
         
         let JourneyArr = []
         if(applyData && applyData.JourneyList&& applyData.JourneyList.length>0){//行程模式
@@ -129,7 +143,6 @@ class ApplicationChangeOrderScreen extends SuperView {
             DestinationObj.BusinessCategory = Destination.BusinessCategory
 
         }
-        
         this.state = {
             // 员工
             employees: this.params.applyEmployees||[],
@@ -142,9 +155,10 @@ class ApplicationChangeOrderScreen extends SuperView {
             // 费用归属
             ApproveOrigin: applyData.ApproveOrigin,
             // 数据字典
-            AdditionInfo: {
-                DictItemList: []
-            },
+            // AdditionInfo: {
+            //     DictItemList: []
+            // },
+            AdditionInfo: initAdditionInfo,
             DicList: [],
             //出差事由
             tripReason: this.params.applyData.TravelReason,
@@ -171,6 +185,68 @@ class ApplicationChangeOrderScreen extends SuperView {
         }
     }
 
+    _initDicListCascade = (dicList, dictMapList, dictItemList) => {
+        if (!Array.isArray(dicList) || dicList.length === 0) return dicList;
+        const safeMapList = Array.isArray(dictMapList) ? dictMapList : [];
+        const safeItemList = Array.isArray(dictItemList) ? dictItemList : [];
+        const configById = {};
+        const childIdSet = new Set();
+        dicList.forEach(cfg => {
+            if (!cfg || cfg.Id === undefined || cfg.Id === null) return;
+            configById[cfg.Id] = cfg;
+            if (cfg.NextId !== undefined && cfg.NextId !== null) childIdSet.add(cfg.NextId);
+        });
+
+        const rootIds = [];
+        dicList.forEach(cfg => {
+            if (!cfg || cfg.Id === undefined || cfg.Id === null) return;
+            if (!childIdSet.has(cfg.Id)) rootIds.push(cfg.Id);
+        });
+
+        dicList.forEach(cfg => {
+            if (!cfg || cfg.Id === undefined || cfg.Id === null) return;
+            cfg.showNext = rootIds.indexOf(cfg.Id) !== -1;
+            if (!cfg.showNext) {
+                cfg.BeforeParentName = undefined;
+                cfg.BeforeParentNameList = [];
+            }
+        });
+
+        const findSelectedItemName = (cfg) => {
+            if (!cfg) return undefined;
+            const hit = safeItemList.find(it => {
+                if (!it) return false;
+                if (cfg.Code !== undefined && cfg.Code !== null && it.DictCode == cfg.Code) return true;
+                if (it.DictId == cfg.Id) return true;
+                if (it.DictName && cfg.Name && it.DictName == cfg.Name) return true;
+                return false;
+            });
+            return hit && hit.ItemName;
+        };
+
+        const visible = new Set(rootIds);
+        const queue = rootIds.slice();
+        while (queue.length > 0) {
+            const id = queue.shift();
+            const cfg = configById[id];
+            if (!cfg || !cfg.NextId) continue;
+            const parentName = findSelectedItemName(cfg);
+            if (!parentName) continue;
+            const hasMatch = safeMapList.some(m => m && m.DictId == cfg.NextId && m.ParentName == parentName);
+            if (!hasMatch) continue;
+            const childCfg = configById[cfg.NextId];
+            if (!childCfg) continue;
+            childCfg.showNext = true;
+            childCfg.BeforeParentName = parentName;
+            childCfg.BeforeParentNameList = [parentName];
+            if (!visible.has(childCfg.Id)) {
+                visible.add(childCfg.Id);
+                queue.push(childCfg.Id);
+            }
+        }
+        return dicList;
+    }
+
     componentDidMount() {
         
         // const {  ApproveOrigin } = this.state;
@@ -192,6 +268,8 @@ class ApplicationChangeOrderScreen extends SuperView {
                 this.setState({
                     userInfo,
                     customerInfo:response.data
+                }, () => {
+                    this._loadCurrentDicList();
                 })
             }).catch(error => {
                 this.toastMsg(error.message);
@@ -231,28 +309,32 @@ class ApplicationChangeOrderScreen extends SuperView {
             this.hideLoadingView();
             if (response && response.success) {
                 if (response.data) {
-                    let arr = response.data&&response.data.filter(obj => {
-                        return obj.ShowInOrder
-                    })
-                    AdditionInfo.DictItemList = arr&&arr.map((item)=>({
-                        DictCode:item.Code,
-                        DictEnName:item.EnName,
-                        DictId:item.Id,
-                        DictName:item.Name,
-                        FormatRegexp:item.FormatRegexp,
-                        Id:item.Id,
-                        ItemEnName:null,
-                        ItemId:"",
-                        ItemInput:"",
-                        ItemName:"",
-                        NeedInput:item.NeedInput,
-                        Remark:item.Remark,
-                        RemarkNo:item.RemarkNo,
-                        NextId:item.NextId,
-                        ShowInOrder:item.ShowInOrder,
-                    }))
+                    let arr = response.data || []
+                    const existingList = (AdditionInfo && Array.isArray(AdditionInfo.DictItemList)) ? AdditionInfo.DictItemList : [];
+                    const hasExistingValue = existingList.some(it => it && (it.ItemName || it.ItemId || it.ItemInput));
+                    if (!hasExistingValue) {
+                        AdditionInfo.DictItemList = arr&&arr.map((item)=>({
+                            DictCode:item.Code,
+                            DictEnName:item.EnName,
+                            DictId:item.Id,
+                            DictName:item.Name,
+                            FormatRegexp:item.FormatRegexp,
+                            Id:item.Id,
+                            ItemEnName:null,
+                            ItemId:"",
+                            ItemInput:"",
+                            ItemName:"",
+                            NeedInput:item.NeedInput,
+                            Remark:item.Remark,
+                            RemarkNo:item.RemarkNo,
+                            NextId:item.NextId,
+                            ShowInOrder:item.ShowInOrder,
+                        })) || [];
+                    }
+                    this._initDicListCascade(arr, this.state.customerInfo && this.state.customerInfo.DictMapList, AdditionInfo && AdditionInfo.DictItemList);
                     this.setState({
                         DicList: arr,
+                        AdditionInfo: AdditionInfo,
                     })
                 }
             } else {
@@ -418,6 +500,53 @@ class ApplicationChangeOrderScreen extends SuperView {
              } = this.state;
         const {applyEmployees,ReferenceEmployeeId,applyData} = this.params;
         if(!applyData){ return }
+        let visibleDicIdSet = null;
+        const getVisibleDictIdSet = function (dictConfigList, dictMapList, dictItemList) {
+            var configs = dictConfigList || [];
+            var mapList = dictMapList || [];
+            var configById = {};
+            var childIdSet = new Set();
+            configs.forEach(function (cfg) {
+                if (cfg && cfg.Id !== undefined) {
+                    configById[cfg.Id] = cfg;
+                }
+                if (cfg && cfg.NextId) {
+                    childIdSet.add(cfg.NextId);
+                }
+            });
+            var rootIds = [];
+            configs.forEach(function (cfg) {
+                if (cfg && cfg.Id !== undefined && !childIdSet.has(cfg.Id)) {
+                    rootIds.push(cfg.Id);
+                }
+            });
+            var visibleIdSet = new Set();
+            var visiting = new Set();
+            var visit = function (id) {
+                if (!id || visibleIdSet.has(id) || visiting.has(id)) return;
+                visiting.add(id);
+                visibleIdSet.add(id);
+                var cfg = configById[id];
+                var nextId = cfg && cfg.NextId;
+                if (nextId) {
+                    var parentItem = dictItemList && dictItemList.find(function (it) {
+                        if (!it) return false;
+                        if (cfg && cfg.Code !== undefined && it.DictCode == cfg.Code) return true;
+                        return it.DictId == id;
+                    });
+                    var parentName = parentItem && parentItem.ItemName;
+                    var rules = mapList && mapList.filter(function (m) { return m && m.DictId == nextId; });
+                    if (!rules || rules.length === 0) {
+                        visit(nextId);
+                    } else if (parentName && rules.some(function (m) { return m && m.ParentName == parentName; })) {
+                        visit(nextId);
+                    }
+                }
+                visiting.delete(id);
+            };
+            rootIds.forEach(function (id) { visit(id); });
+            return visibleIdSet;
+        };
 
         if(emailHisArr.indexOf(emailArrStr) === -1){
             emailHisArr.push(emailArrStr)    
@@ -449,10 +578,24 @@ class ApplicationChangeOrderScreen extends SuperView {
             }
         }
         if (DicList) {
+            const nextIdArr = [];
+            DicList.forEach(i => {
+                if (i && i.NextId) nextIdArr.push(i.NextId);
+            });
+            visibleDicIdSet = new Set();
             for (let i = 0; i < DicList.length; i++) {
                 const obj = DicList[i];
+                const isVisible = (obj.showNext === undefined || obj.showNext === null)
+                    ? (nextIdArr.indexOf(obj.Id) === -1)
+                    : obj.showNext;
+                if (!isVisible) {
+                    continue;
+                }
+                visibleDicIdSet.add(obj.Id);
                 if (obj.IsRequire) {
-                    let dicItem = AdditionInfo.DictItemList&&AdditionInfo.DictItemList.find(dic => dic.DictId === obj.Id);
+                    let dicItem = AdditionInfo.DictItemList&&AdditionInfo.DictItemList.find(dic =>
+                        (obj.Code !== undefined && dic.DictCode == obj.Code) || dic.DictId === obj.Id
+                    );
                     if (!dicItem) {
                         this.toastMsg(I18nUtil.tranlateInsert('{{noun}}不能为空', I18nUtil.translate(obj.Name)));
                         return;
@@ -610,7 +753,7 @@ class ApplicationChangeOrderScreen extends SuperView {
                 ardNo: obj.CertificateNumber,
                 Mobile: obj.Mobile,
                 Email: obj.Email,
-                EmployeeId: obj.Id ? obj.Id : '0',
+                EmployeeId: obj.EmployeeId ? obj.EmployeeId : '0',
                 Sex: obj.Sex ? obj.Sex : obj.Gender,
                 Gender: obj.Sex ? obj.Sex : obj.Gender,
                 SexDesc:obj.SexDesc,
@@ -696,19 +839,28 @@ class ApplicationChangeOrderScreen extends SuperView {
                 return;
             }
             if(customerInfo.EmployeeDictList&&customerInfo.EmployeeDictList.length>0){
+                const visibleEmployeeIdSet = getVisibleDictIdSet(customerInfo.EmployeeDictList, customerInfo.DictMapList, obj.Addition && obj.Addition.DictItemList);
                 for (let i = 0; i < customerInfo.EmployeeDictList.length; i++) {
-                   let itemIndex =  obj.Addition&&obj.Addition.DictItemList.find(
-                       item => item.DictId === customerInfo.EmployeeDictList[i].Id
-                   );
+                   if (!visibleEmployeeIdSet.has(customerInfo.EmployeeDictList[i].Id)) {
+                       continue;
+                   }
+                   let itemIndex =  obj.Addition&&obj.Addition.DictItemList&&obj.Addition.DictItemList.find(item => {
+                       if (!item) return false;
+                       if (customerInfo.EmployeeDictList[i].Code !== undefined && item.DictCode == customerInfo.EmployeeDictList[i].Code) return true;
+                       return item.DictId == customerInfo.EmployeeDictList[i].Id;
+                   });
                    if(!itemIndex){
                        itemIndex = customerInfo.EmployeeDictList[i]
                        itemIndex.DictName =Util.Parse.isChinese() ? customerInfo.EmployeeDictList[i].Name : customerInfo.EmployeeDictList[i].EnName
                    }
-                   if(itemIndex.IsRequire &&customerInfo.EmployeeDictList[i].ShowInOrder){
-                           if (itemIndex.NeedInput && !itemIndex.ItemName) {
-                               this.toastMsg(I18nUtil.tranlateInsert('{{noun}}不能为空', I18nUtil.translate(itemIndex.DictName)));
-                               return;
-                           }
+                   if(itemIndex.IsRequire){
+                       if (itemIndex.NeedInput && !itemIndex.ItemName) {
+                           this.toastMsg(I18nUtil.tranlateInsert('{{noun}}不能为空', I18nUtil.translate(itemIndex.DictName)));
+                           return;
+                       } else if (!itemIndex.NeedInput && !itemIndex.ItemId) {
+                           this.toastMsg(I18nUtil.tranlateInsert('{{noun}}不能为空', I18nUtil.translate(itemIndex.DictName)));
+                           return;
+                       }
                    }
                }
            }
@@ -721,6 +873,71 @@ class ApplicationChangeOrderScreen extends SuperView {
                 return;
             }
         }
+
+        const dictConfigList = Array.isArray(DicList) ? DicList : [];
+        const existCompanyDictItemList = AdditionInfo && Array.isArray(AdditionInfo.DictItemList) ? AdditionInfo.DictItemList : [];
+        const nullCompanyDictList = dictConfigList.map((item) => ({
+            DictCode: item.Code,
+            DictEnName: item.EnName,
+            DictId: item.Id,
+            DictName: item.Name,
+            FormatRegexp: item.FormatRegexp,
+            Id: item.Id,
+            ItemEnName: null,
+            ItemId: "",
+            ItemInput: "",
+            ItemName: "",
+            NeedInput: item.NeedInput,
+            Remark: item.Remark,
+            RemarkNo: item.RemarkNo,
+            NextId: item.NextId,
+            ShowInOrder: item.ShowInOrder,
+            BusinessCategory: item.BusinessCategory,
+        }));
+        existCompanyDictItemList.forEach((it) => {
+            if (!it) return;
+            const dictId = it.DictId || it.Id;
+            let index = -1;
+            if (dictId !== undefined && dictId !== null) {
+                index = nullCompanyDictList.findIndex(e => e && (e.Id == dictId || e.DictId == dictId));
+            }
+            if (index === -1 && it.DictCode !== undefined) {
+                index = nullCompanyDictList.findIndex(e => e && e.DictCode == it.DictCode);
+            }
+            if (index > -1) {
+                const base = nullCompanyDictList[index];
+                nullCompanyDictList[index] = {
+                    ...base,
+                    ...it,
+                    Id: base.Id,
+                    DictId: base.DictId,
+                    DictCode: base.DictCode,
+                    DictName: base.DictName,
+                    DictEnName: base.DictEnName,
+                    NeedInput: base.NeedInput,
+                    NextId: base.NextId,
+                    ShowInOrder: base.ShowInOrder,
+                    FormatRegexp: base.FormatRegexp,
+                    Remark: base.Remark,
+                    RemarkNo: base.RemarkNo,
+                    BusinessCategory: base.BusinessCategory,
+                };
+            }
+        });
+        const childIdSet = new Set();
+        dictConfigList.forEach((cfg) => {
+            if (cfg && cfg.NextId) childIdSet.add(cfg.NextId);
+        });
+        const visibleCompanyIdSet = getVisibleDictIdSet(dictConfigList, customerInfo && customerInfo.DictMapList, nullCompanyDictList);
+        if (!AdditionInfo) {
+            this.state.AdditionInfo = { DictItemList: [] };
+        }
+        AdditionInfo.DictItemList = nullCompanyDictList.filter((it) => {
+            const id = it && (it.DictId || it.Id);
+            if (!id) return false;
+            if (!childIdSet.has(id)) return true;
+            return visibleCompanyIdSet && visibleCompanyIdSet.has(id);
+        });
 
         let Contact = {
             Name: contactName,
@@ -1207,7 +1424,7 @@ class ApplicationChangeOrderScreen extends SuperView {
                                     )
                                 }):<CustomText text={'请选择出发地'} style={{ fontSize: 13, color:'gray',marginLeft:3}} />
                             }
-                            <Ionicons name={'chevron-forward'} size={20} color={'lightgray'} style={{ marginLeft: 5 }} />
+                            <Ionicons name={'ios-arrow-forward'} size={20} color={'lightgray'} style={{ marginLeft: 5 }} />
                         </View>
                     </View>
                 </TouchableHighlight>
@@ -1222,7 +1439,7 @@ class ApplicationChangeOrderScreen extends SuperView {
                                     )
                                 }):<CustomText text={'请选择目的地'} style={{ fontSize: 13, color:'gray',marginLeft:3}} />
                             }
-                            <Ionicons name={'chevron-forward'} size={20} color={'lightgray'} style={{ marginLeft: 5 }} />
+                            <Ionicons name={'ios-arrow-forward'} size={20} color={'lightgray'} style={{ marginLeft: 5 }} />
                         </View>
                     </View>
                 </TouchableHighlight>
@@ -1267,7 +1484,7 @@ class ApplicationChangeOrderScreen extends SuperView {
                                 })
                             }
                         </View>
-                        <Ionicons name={'chevron-forward'} size={20} color={'lightgray'} style={{ marginLeft: 5 }} />
+                        <Ionicons name={'ios-arrow-forward'} size={20} color={'lightgray'} style={{ marginLeft: 5 }} />
                     </View>
                 </TouchableHighlight>
             </View>:
@@ -1307,7 +1524,7 @@ class ApplicationChangeOrderScreen extends SuperView {
                                         <CustomText text='国内/国际行程' style={{ flex: 5 }} />
                                         <View style={{ flexDirection: 'row-reverse', alignItems: 'flex-end', flex: 5}}>
                                             {/* <CustomText text={obj.isNational ? '国际' : '国内'} style={{ fontSize: 16 }} />
-                                            <Ionicons name={'chevron-forward'} size={22} color={'lightgray'} style={{ marginLeft: 5 }} /> */}
+                                            <Ionicons name={'ios-arrow-forward'} size={22} color={'lightgray'} style={{ marginLeft: 5 }} /> */}
                                             <View style={[{ borderColor: !obj.isNational ? Theme.theme : Theme.darkColor, backgroundColor: !obj.isNational ? Theme.greenBg :'#fff' }, styles.borderAll]}>
                                                 <CustomText text='国内' style={{ color: !obj.isNational ? Theme.theme : 'black' }} />
                                             </View>
@@ -1350,7 +1567,7 @@ class ApplicationChangeOrderScreen extends SuperView {
                                                 })
                                             }
                                         </View>
-                                        <Ionicons name={'chevron-forward'} size={20} color={'lightgray'} style={{ marginLeft: 5 }} />
+                                        <Ionicons name={'ios-arrow-forward'} size={20} color={'lightgray'} style={{ marginLeft: 5 }} />
                                     </View>
                                 </TouchableHighlight>
                             </View>

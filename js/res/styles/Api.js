@@ -133,6 +133,13 @@ export default {
         FlightOrderReissueFee:'/api/FlightOrderReissueFee',
         FlightTicketUnUsedList:'/api/FlightTicketUnUsedList',
         FltOrderValidateTicketStatus:'/api/FltOrderValidateTicketStatus',
+        OrderPnrSeatInfo:'/api/OrderPnrSeatInfo',
+        //查询座位
+        OrderSeatMap:'/api/OrderSeatMap',
+        //选择座位
+        OrderSeatChoose:'/api/OrderSeatChoose',
+        //删除座位
+        OrderSeatDelete:'/api/OrderSeatDelete',
     },
     train: {
         trainQuery: '/api/TrainQuery',
@@ -177,6 +184,11 @@ export default {
         IntlFlightMatchTravelRules:'/api/IntlFlightMatchTravelRules',
         CommonAirline:'/api/CommonAirline2',
         getIntlFlightQueryByPriceI:'/api/IntlFlightQueryByPriceI',
+        FlightOrderPnrSeatInfo:'/api/FlightOrderPnrSeatInfo',
+        FlightOrderSeatMap:'/api/FlightOrderSeatMap',
+        FlightOrderSeatChoose:'/api/FlightOrderSeatChoose',
+        //删除座位
+        FlightOrderSeatDelete:'/api/FlightOrderSeatDelete',
     },
     hotel: {
         orderList: '/api/HotelOrderList',

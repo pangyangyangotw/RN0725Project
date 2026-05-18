@@ -77,6 +77,7 @@ export default {
      * 橘色背景
      */
     orangeBg:'#FEEFE5',
+    orangeBg2:'#f7ad7b',
     /**
      * 粉色背景
      */

@@ -15,7 +15,6 @@ import I18nUtil from '../../util/I18nUtil';
 import Util from '../../util/Util';
 import FlightService from '../../service/FlightService';
 import PropTypes from 'prop-types';
-// import { Themed, withNavigation } from 'react-navigation';
 import { useNavigation } from '@react-navigation/native';
 import NavigationUtils from '../../navigator/NavigationUtils';
 import CommonService from '../../service/CommonService';
@@ -30,10 +29,55 @@ class OrderListItem extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = {
-            showServiceCharge:true
+            showServiceCharge:true,
+            noChooseSeatAirlineConfig: [],
         }
     }
+
+    _getNoChooseSeatSet = () => {
+        const list = Array.isArray(this.state.noChooseSeatAirlineConfig) ? this.state.noChooseSeatAirlineConfig : [];
+        const blocked = list
+            .map((it) => {
+                if (!it) return '';
+                const v = (typeof it === 'string' || typeof it === 'number')
+                    ? String(it)
+                    : (it.Code || it.code || it.Airline || it.airline || it.AirlineCode || it.airlineCode || '');
+                return String(v).trim().toUpperCase();
+            })
+            .filter(Boolean);
+        return new Set(blocked);
+    }
+
+    _canChooseSeatByAirlines = (order) => {
+        const o = order || {};
+        const blockedSet = this._getNoChooseSeatSet();
+        if (!blockedSet || blockedSet.size === 0) return true;
+
+        const airlines = Array.isArray(o.Airlines) ? o.Airlines : [];
+        if (airlines.length > 0) {
+            return airlines.some((it) => {
+                const code = it && (it.Code || it.code || it.Airline || it.airline || it.AirlineCode || it.airlineCode);
+                const v = String(code || '').trim().toUpperCase();
+                if (!v) return true;
+                return !blockedSet.has(v);
+            });
+        }
+
+        const singleCode = String(o.Airline || o.AirlineCode || o.Code || '').trim().toUpperCase();
+        if (!singleCode) return true;
+        return !blockedSet.has(singleCode);
+    }
+
+    _canChooseSeatByShareAirline = (order) => {
+        const o = order || {};
+        const blockedSet = this._getNoChooseSeatSet();
+        if (!blockedSet || blockedSet.size === 0) return true;
+        const share = String(o.ShareAirline || '').trim().toUpperCase();
+        if (!share) return true;
+        return !blockedSet.has(share);
+    }
     componentDidMount = () => {
+        const { otwThis } = this.props;
         let model = {
             OrderCategory: 1,//国内飞机
             MatchModel: null,
@@ -44,10 +88,31 @@ class OrderListItem extends React.PureComponent {
                     showServiceCharge: response.data.IsShowServiceFee
                 })
             }else{
-                this.toastMsg('获取数据异常');
+                otwThis && otwThis.toastMsg && otwThis.toastMsg('获取数据异常');
             }
         }).catch(error => {
-            this.toastMsg(error.message);
+            otwThis && otwThis.toastMsg && otwThis.toastMsg(error.message);
+        })
+
+        let melaModel = { 
+            Key:"noChooseSeatAirlineConfig" 
+        }
+        CommonService.GetMelaData(melaModel).then(response => {
+            if (response && response.success && response.data) {
+                let cfg = response.data.noChooseSeatAirlineConfig ?? response.data.NoChooseSeatAirlineConfig ?? response.data;
+                if (typeof cfg === 'string') {
+                    try {
+                        cfg = JSON.parse(cfg);
+                    } catch (e) {
+                        cfg = [];
+                    }
+                }
+                this.setState({
+                    noChooseSeatAirlineConfig: Array.isArray(cfg) ? cfg : [],
+                })
+            }
+        }).catch(error => {
+            otwThis && otwThis.toastMsg && otwThis.toastMsg(error.message);
         })
     }
     /**
@@ -216,6 +281,12 @@ class OrderListItem extends React.PureComponent {
             otwThis.toastMsg(error.message || '获取数据异常');
         })
     }
+
+    chooseSeat = () => {
+        const { order } = this.props;
+        const { noChooseSeatAirlineConfig } = this.state;
+        NavigationUtils.push(this.props.navigation, 'FlightChooseSeatScreen', {order,from:'flight',noChooseSeatAirlineConfig});
+    }
     
     render() {
         const { order } = this.props;
@@ -223,6 +294,9 @@ class OrderListItem extends React.PureComponent {
         if (!order) return;
         order.DepartureTime = Util.Date.toDate(order.DepartureTime);
         order.DestinationTime = Util.Date.toDate(order.DestinationTime);
+        const nowTime = new Date().getTime();
+        const depTime = order.DepartureTime && order.DepartureTime.getTime ? order.DepartureTime.getTime() : NaN;
+        const isBeforeDeparture = isFinite(depTime) ? nowTime < depTime : true;
         let showBtn = this.props.userInfoId ===order.CreateEmployeeId ?true:false;
         return (
             <TouchableHighlight underlayColor='transparent' onPress={this._toDetailAction} style={{ backgroundColor: 'white', marginHorizontal:10,paddingHorizontal: 20 ,borderRadius:6,marginTop:10}}>
@@ -279,6 +353,15 @@ class OrderListItem extends React.PureComponent {
                         !this.props.dontShow  && showBtn &&
                         <View style={{ flexDirection: 'row-reverse', marginTop: 10, alignItems:'center',borderTopWidth:1 ,borderColor:Theme.lineColor}}>
                             {
+                                order.Status === FlightEnum.OrderStatus.TicketIssued && isBeforeDeparture && this._canChooseSeatByAirlines(order) && this._canChooseSeatByShareAirline(order) && order.SupplierType === 1 && order.IsTestOrder ==false ?
+                                <View style={{paddingVertical:10, flexDirection:'row'}}>
+                                    <TouchableHighlight underlayColor='transparent' style={styles.btn} onPress={this.chooseSeat}>
+                                        <CustomText style={{ color: 'white' }} text='选座' />
+                                    </TouchableHighlight>
+                                </View>
+                                :null
+                            }
+                            {
                                 order.Status === FlightEnum.OrderStatus.TicketIssued && order.CanRefund ?
                                     <View style={{paddingVertical:10}}>
                                         <TouchableHighlight underlayColor='transparent' style={styles.btn2} onPress={()=>{this._ValidateTicket(3)}}>
@@ -317,6 +400,7 @@ class OrderListItem extends React.PureComponent {
                                     </View>
                                     : null
                             }
+                            
                         </View>
                     }
                 </View>
@@ -338,14 +422,14 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius:2,
-        paddingHorizontal:15,       
+        paddingHorizontal:5,       
     },
     btn2: {
         height: 22,
         marginLeft: 10,
         alignItems: 'center',
         justifyContent: 'center',
-        paddingHorizontal:15,
+        paddingHorizontal:5,
         borderWidth:1,
         borderColor:Theme.theme,
         borderRadius:2       

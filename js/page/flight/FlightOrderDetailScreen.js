@@ -62,7 +62,8 @@ class FlightOrderDetailScreen extends SuperView {
             comment: '',
             IsShowServiceFee: true,
             visible: false,
-            showImageUrl: ''
+            showImageUrl: '',
+            noChooseSeatAirlineConfig: []
         }
         this.backPress = new BackPress({ backPress: () => this._backBtnClick() })
     }
@@ -113,6 +114,135 @@ class FlightOrderDetailScreen extends SuperView {
 
         })
 
+        this._fetchNoChooseSeatAirlineConfig()
+    }
+
+    _fetchNoChooseSeatAirlineConfig = () => {
+        let melaModel = {
+            Key: "noChooseSeatAirlineConfig"
+        }
+        CommonService.GetMelaData(melaModel).then(response => {
+            if (response && response.success && response.data) {
+                let cfg = response.data.noChooseSeatAirlineConfig ?? response.data.NoChooseSeatAirlineConfig ?? response.data;
+                if (typeof cfg === 'string') {
+                    try {
+                        cfg = JSON.parse(cfg);
+                    } catch (e) {
+                        cfg = [];
+                    }
+                }
+                this.setState({
+                    noChooseSeatAirlineConfig: Array.isArray(cfg) ? cfg : [],
+                })
+            }
+        }).catch(error => {
+        })
+    }
+
+    _getNoChooseSeatSet = () => {
+        const list = Array.isArray(this.state.noChooseSeatAirlineConfig) ? this.state.noChooseSeatAirlineConfig : [];
+        const blocked = list
+            .map((it) => {
+                if (!it) return '';
+                const v = (typeof it === 'string' || typeof it === 'number')
+                    ? String(it)
+                    : (it.Code || it.code || it.Airline || it.airline || it.AirlineCode || it.airlineCode || '');
+                return String(v).trim().toUpperCase();
+            })
+            .filter(Boolean);
+        return new Set(blocked);
+    }
+
+    _canChooseSeatByAirlines = (order) => {
+        const o = order || {};
+        const blockedSet = this._getNoChooseSeatSet();
+        if (!blockedSet || blockedSet.size === 0) return true;
+
+        const airlines = Array.isArray(o.Airlines) ? o.Airlines : [];
+        if (airlines.length > 0) {
+            return airlines.some((it) => {
+                const code = it && (it.Code || it.code || it.Airline || it.airline || it.AirlineCode || it.airlineCode);
+                const v = String(code || '').trim().toUpperCase();
+                if (!v) return true;
+                return !blockedSet.has(v);
+            });
+        }
+
+        const singleCode = String(
+            o.Airline || o.AirlineCode || o.Code ||
+            o.OrderAir?.Airline || o.OrderAir?.AirlineCode || o.OrderAir?.Code || ''
+        ).trim().toUpperCase();
+        if (!singleCode) return true;
+        return !blockedSet.has(singleCode);
+    }
+
+    _canChooseSeatByShareAirline = (order) => {
+        const o = order || {};
+        const blockedSet = this._getNoChooseSeatSet();
+        if (!blockedSet || blockedSet.size === 0) return true;
+        const share = String(o.OrderAir?.ShareAirline || '').trim().toUpperCase();
+        if (!share) return true;
+        return !blockedSet.has(share);
+    }
+
+    _isBeforeDeparture = (order) => {
+        const o = order || {};
+        const departureTimeValue = Util.Date.toDate(o.OrderAir?.DepartureTime);
+        const depTime = departureTimeValue && departureTimeValue.getTime ? departureTimeValue.getTime() : NaN;
+        const nowTime = new Date().getTime();
+        return isFinite(depTime) ? nowTime < depTime : true;
+    }
+
+    _shouldShowChooseSeat = (order) => {
+        const o = order || {};
+        return o.Status === FlightEnum.OrderStatus.TicketIssued
+            && this._isBeforeDeparture(o)
+            && this._canChooseSeatByAirlines(o)
+            && o.SupplierType === 1
+            && o.TestOrder == false
+            && this._canChooseSeatByShareAirline(o);
+    }
+
+    _chooseSeat = () => {
+        const { order, noChooseSeatAirlineConfig } = this.state;
+        if (!order) return;
+        this.push('FlightChooseSeatScreen', { order, from: 'flight', noChooseSeatAirlineConfig })
+    }
+
+    _renderBottomButtons = (order, showBtn) => {
+        const o = order || {};
+        const canShowChooseSeat = !this.params.isApprove && !!showBtn && this._shouldShowChooseSeat(o);
+        const canShowTwoBtn = !this.params.isApprove && !!showBtn && o.Status === FlightEnum.OrderStatus.TicketIssued && (o.CanReissue || o.CanRefund);
+
+        if (this.params.isApprove && this.params.approveShow && o.Status === 2) {
+            return ViewUtil.getTwoBottomBtn('驳回', this._rejectConfim, '同意', this._agreeConfim)
+        }
+
+        if (canShowTwoBtn && canShowChooseSeat) {
+            return (
+                <View style={{ height: 80, width: global.screenWidth, backgroundColor: '#fff', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingBottom: 10, borderTopWidth: 1, borderTopColor: Theme.normalBg }}>
+                    <TouchableOpacity onPress={this._chooseSeat} style={{ height: 44, flex: 1, marginLeft: 16, borderWidth: 1, borderColor: Theme.theme, borderRadius: 4, alignItems: 'center', justifyContent: 'center' }}>
+                        <CustomText text={'选座'} style={{ fontSize: 16, color: Theme.theme }}></CustomText>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={this._ValidateTicket1} style={{ height: 44, flex: 1, marginLeft: 9, borderWidth: 1, borderColor: Theme.theme, borderRadius: 4, alignItems: 'center', justifyContent: 'center' }}>
+                        <CustomText text={'改签'} style={{ fontSize: 16, color: Theme.theme }}></CustomText>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={this._ValidateTicket2} style={{ height: 44, flex: 1, marginLeft: 9, marginRight: 16, backgroundColor: Theme.theme, borderRadius: 4, alignItems: 'center', justifyContent: 'center' }}>
+                        <CustomText text={'退票'} style={{ fontSize: 16, color: '#fff' }}></CustomText>
+                    </TouchableOpacity>
+                </View>
+            )
+        }
+
+        if (canShowTwoBtn) {
+            return ViewUtil.getTwoBottomBtn('改签', this._ValidateTicket1, '退票', this._ValidateTicket2)
+        }
+
+        if (canShowChooseSeat) {
+            return ViewUtil.getThemeButton('选座', this._chooseSeat)
+        }
+
+        return null
     }
 
     //国内机票校验是否值机
@@ -849,7 +979,6 @@ class FlightOrderDetailScreen extends SuperView {
                     {/* <TouchableOpacity onPress={() => { this.setState({ showPrice: !this.state.showPrice }) }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                             <CustomText style={{ color: '#6DC17F', fontSize: 13 }} text={showPrice ? '收起详情' : '展开详情'} />
-                            <Ionicons name={showPrice ? 'chevron-up' : 'chevron-down'} size={24} color={'#6DC17F'} style={{ marginRight: 5 }} />
                         </View>
                     </TouchableOpacity> */}
                 </View>
@@ -1010,16 +1139,7 @@ class FlightOrderDetailScreen extends SuperView {
                 </ScrollView>
                 </View>}
            </LinearGradient>
-                {   
-                    !this.params.isApprove && showBtn && order.Status === FlightEnum.OrderStatus.TicketIssued && (order.CanReissue || order.CanRefund) ?
-                    ViewUtil.getTwoBottomBtn('改签',this._ValidateTicket1,'退票',this._ValidateTicket2)
-                    :null
-                }
-                {
-                    this.params.isApprove && this.params.approveShow&& order.Status===2? 
-                    ViewUtil.getTwoBottomBtn('驳回',this._rejectConfim,'同意',this._agreeConfim)
-                    : null
-                }
+                {this._renderBottomButtons(order, showBtn)}
            </View>
         )
     }

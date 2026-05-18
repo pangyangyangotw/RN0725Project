@@ -147,7 +147,7 @@ class ApplicationCreateOrderScreen extends SuperView {
         const {AdditionInfo} = this.state;
         const {ReferenceEmployeeId, applyEmployees} = this.params;
         let PassengerId = applyEmployees&&applyEmployees.length>0 ? applyEmployees[applyEmployees.length-1].PassengerOrigin.EmployeeId: null
-        // this.showLoadingView();
+        this.showLoadingView();
         let model = {
             OrderCategory: 0,
             ShowInApply: true,
@@ -159,9 +159,7 @@ class ApplicationCreateOrderScreen extends SuperView {
             this.hideLoadingView();
             if (response && response.success) {
                 if (response.data) {
-                    let arr = response.data&&response.data.filter(obj => {
-                        return obj.ShowInOrder
-                    })
+                    let arr = response.data || []
                     AdditionInfo.DictItemList = arr&&arr.map((item)=>({
                         DictCode:item.Code,
                         DictEnName:item.EnName,
@@ -344,6 +342,53 @@ class ApplicationCreateOrderScreen extends SuperView {
                 ImageInfo,moreDestination,DepartureArr,DestinationArr,selectType,fileList, 
                 ApproverInfo,emailHisArr,contactName,contactMobile,emailArrStr } = this.state;
         const {applyEmployees,ReferenceEmployeeId, ReferenceEmployee} = this.params;
+        let visibleDicIdSet = null;
+        const getVisibleDictIdSet = function (dictConfigList, dictMapList, dictItemList) {
+            var configs = dictConfigList || [];
+            var mapList = dictMapList || [];
+            var configById = {};
+            var childIdSet = new Set();
+            configs.forEach(function (cfg) {
+                if (cfg && cfg.Id !== undefined) {
+                    configById[cfg.Id] = cfg;
+                }
+                if (cfg && cfg.NextId) {
+                    childIdSet.add(cfg.NextId);
+                }
+            });
+            var rootIds = [];
+            configs.forEach(function (cfg) {
+                if (cfg && cfg.Id !== undefined && !childIdSet.has(cfg.Id)) {
+                    rootIds.push(cfg.Id);
+                }
+            });
+            var visibleIdSet = new Set();
+            var visiting = new Set();
+            var visit = function (id) {
+                if (!id || visibleIdSet.has(id) || visiting.has(id)) return;
+                visiting.add(id);
+                visibleIdSet.add(id);
+                var cfg = configById[id];
+                var nextId = cfg && cfg.NextId;
+                if (nextId) {
+                    var parentItem = dictItemList && dictItemList.find(function (it) {
+                        if (!it) return false;
+                        if (cfg && cfg.Code !== undefined && it.DictCode == cfg.Code) return true;
+                        return it.DictId == id;
+                    });
+                    var parentName = parentItem && parentItem.ItemName;
+                    var rules = mapList && mapList.filter(function (m) { return m && m.DictId == nextId; });
+                    if (!rules || rules.length === 0) {
+                        visit(nextId);
+                    } else if (parentName && rules.some(function (m) { return m && m.ParentName == parentName; })) {
+                        visit(nextId);
+                    }
+                }
+                visiting.delete(id);
+            };
+            rootIds.forEach(function (id) { visit(id); });
+            return visibleIdSet;
+        };
         if(emailHisArr.indexOf(emailArrStr) === -1){
             emailHisArr.push(emailArrStr)    
         }
@@ -373,10 +418,24 @@ class ApplicationCreateOrderScreen extends SuperView {
         //     }
         // }
         if (DicList) {
+            const nextIdArr = [];
+            DicList.forEach(i => {
+                if (i && i.NextId) nextIdArr.push(i.NextId);
+            });
+            visibleDicIdSet = new Set();
             for (let i = 0; i < DicList.length; i++) {
                 const obj = DicList[i];
+                const isVisible = (obj.showNext === undefined || obj.showNext === null)
+                    ? (nextIdArr.indexOf(obj.Id) === -1)
+                    : obj.showNext;
+                if (!isVisible) {
+                    continue;
+                }
+                visibleDicIdSet.add(obj.Id);
                 if (obj.IsRequire) {
-                    let dicItem = AdditionInfo.DictItemList&&AdditionInfo.DictItemList.find(dic => dic.DictId === obj.Id);
+                    let dicItem = AdditionInfo.DictItemList&&AdditionInfo.DictItemList.find(dic => 
+                        (obj.Code !== undefined && dic.DictCode == obj.Code) || dic.DictId === obj.Id
+                    );
                     if (!dicItem) {
                         this.toastMsg(I18nUtil.tranlateInsert('{{noun}}不能为空', I18nUtil.translate(obj.Name)));
                         return;
@@ -625,19 +684,28 @@ class ApplicationCreateOrderScreen extends SuperView {
                 return;
             }
             if(customerInfo.EmployeeDictList&&customerInfo.EmployeeDictList.length>0){
+                const visibleEmployeeIdSet = getVisibleDictIdSet(customerInfo.EmployeeDictList, customerInfo.DictMapList, obj.Addition && obj.Addition.DictItemList);
                 for (let i = 0; i < customerInfo.EmployeeDictList.length; i++) {
-                   let itemIndex =  obj.Addition&&obj.Addition.DictItemList.find(
-                       item => item.DictId === customerInfo.EmployeeDictList[i].Id
-                   );
+                   if (!visibleEmployeeIdSet.has(customerInfo.EmployeeDictList[i].Id)) {
+                       continue;
+                   }
+                   let itemIndex =  obj.Addition&&obj.Addition.DictItemList.find(item => {
+                       if (!item) return false;
+                       if (customerInfo.EmployeeDictList[i].Code !== undefined && item.DictCode == customerInfo.EmployeeDictList[i].Code) return true;
+                       return item.DictId == customerInfo.EmployeeDictList[i].Id;
+                   });
                    if(!itemIndex){
                        itemIndex = customerInfo.EmployeeDictList[i]
                        itemIndex.DictName =Util.Parse.isChinese() ? customerInfo.EmployeeDictList[i].Name : customerInfo.EmployeeDictList[i].EnName
                    }
-                   if(itemIndex.IsRequire &&customerInfo.EmployeeDictList[i].ShowInOrder){
-                           if (itemIndex.NeedInput && !itemIndex.ItemName) {
-                               this.toastMsg(I18nUtil.tranlateInsert('{{noun}}不能为空', I18nUtil.translate(itemIndex.DictName)));
-                               return;
-                           }
+                   if(itemIndex.IsRequire){
+                       if (itemIndex.NeedInput && !itemIndex.ItemName) {
+                           this.toastMsg(I18nUtil.tranlateInsert('{{noun}}不能为空', I18nUtil.translate(itemIndex.DictName)));
+                           return;
+                       } else if (!itemIndex.NeedInput && !itemIndex.ItemId) {
+                           this.toastMsg(I18nUtil.tranlateInsert('{{noun}}不能为空', I18nUtil.translate(itemIndex.DictName)));
+                           return;
+                       }
                    }
                }
            }
@@ -673,6 +741,73 @@ class ApplicationCreateOrderScreen extends SuperView {
             Mobile: contactMobile,
             Email: emailArrStr,
         }
+        const submitAddition = (() => {
+            const raw = AdditionInfo || {};
+            const dictConfigList = Array.isArray(DicList) ? DicList : [];
+            const existCompanyDictItemList = Array.isArray(raw.DictItemList) ? raw.DictItemList : [];
+            const nullCompanyDictList = dictConfigList.map((item) => ({
+                DictCode: item.Code,
+                DictEnName: item.EnName,
+                DictId: item.Id,
+                DictName: item.Name,
+                FormatRegexp: item.FormatRegexp,
+                Id: item.Id,
+                ItemEnName: null,
+                ItemId: "",
+                ItemInput: "",
+                ItemName: "",
+                NeedInput: item.NeedInput,
+                Remark: item.Remark,
+                RemarkNo: item.RemarkNo,
+                NextId: item.NextId,
+                ShowInOrder: item.ShowInOrder,
+                BusinessCategory: item.BusinessCategory,
+            }));
+            existCompanyDictItemList.forEach((it) => {
+                if (!it) return;
+                const dictId = it.DictId || it.Id;
+                let index = -1;
+                if (dictId !== undefined && dictId !== null) {
+                    index = nullCompanyDictList.findIndex(e => e && (e.Id == dictId || e.DictId == dictId));
+                }
+                if (index === -1 && it.DictCode !== undefined) {
+                    index = nullCompanyDictList.findIndex(e => e && e.DictCode == it.DictCode);
+                }
+                if (index > -1) {
+                    const base = nullCompanyDictList[index];
+                    nullCompanyDictList[index] = {
+                        ...base,
+                        ...it,
+                        Id: base.Id,
+                        DictId: base.DictId,
+                        DictCode: base.DictCode,
+                        DictName: base.DictName,
+                        DictEnName: base.DictEnName,
+                        NeedInput: base.NeedInput,
+                        NextId: base.NextId,
+                        ShowInOrder: base.ShowInOrder,
+                        FormatRegexp: base.FormatRegexp,
+                        Remark: base.Remark,
+                        RemarkNo: base.RemarkNo,
+                        BusinessCategory: base.BusinessCategory,
+                    };
+                }
+            });
+            const childIdSet = new Set();
+            dictConfigList.forEach((cfg) => {
+                if (cfg && cfg.NextId) childIdSet.add(cfg.NextId);
+            });
+            const visibleCompanyIdSet = getVisibleDictIdSet(dictConfigList, customerInfo && customerInfo.DictMapList, nullCompanyDictList);
+            return {
+                ...raw,
+                DictItemList: nullCompanyDictList.filter((it) => {
+                    const id = it && (it.DictId || it.Id);
+                    if (!id) return false;
+                    if (!childIdSet.has(id)) return true;
+                    return visibleCompanyIdSet && visibleCompanyIdSet.has(id);
+                }),
+            };
+        })();
         
         let model = {  
             OrderType: 1,
@@ -682,7 +817,7 @@ class ApplicationCreateOrderScreen extends SuperView {
             JourneyList: journeyList,
             Destination:moreDestination,
             TravelApplyMode:customerInfo&&customerInfo.Setting&&customerInfo.Setting.TravelApplyMode,
-            Addition: AdditionInfo,
+            Addition: submitAddition,
             TravellerList: TravellerList,
             ApproveOrigin: ApproveOrigin,
             // AttachmentList: [{ Name: ImageInfo && ImageInfo.fileName, FileId: ImageInfo && ImageInfo.data, Url: ImageUrl }],

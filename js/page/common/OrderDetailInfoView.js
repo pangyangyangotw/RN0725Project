@@ -131,12 +131,10 @@ export default class OrderDetailInfoView extends React.PureComponent {
                 {
                     dictList.map((item, index) => {
                         return (
-                            item.ShowInOrder?
                             <View key={index} style={styles.dicView}>
                                 <CustomText text={item.key} style={{ color: Theme.commonFontColor,fontSize:14,flex:3,textAlign:'left' }} />
                                 <CustomText text={item.value} style={{ color: Theme.fontColor ,fontSize:14,flex:7,textAlign:'right'}} />
                             </View>
-                            :null
                         )
                     })
                 }

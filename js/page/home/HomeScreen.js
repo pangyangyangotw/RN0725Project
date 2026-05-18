@@ -1,5 +1,6 @@
 import React from 'react';
-import { 
+
+import {
   View,
   Image,
   Platform,
@@ -15,9 +16,7 @@ import {
   ImageBackground,
   Alert,
   FlatList,
-  Dimensions,
-  SafeAreaView,
-  Button
+  Dimensions
 } from 'react-native';
 
 import Drawer from 'react-native-drawer';
@@ -27,6 +26,7 @@ import Theme from '../../res/styles/Theme';
 import UserInfoDao from '../../service/UserInfoDao';
 import CommonService from '../../service/CommonService';
 import ComprehensiveService from '../../service/ComprehensiveService';
+// import Theme from '../../res/styles/Theme';
 import CustomText from '../../custom/CustomText';
 import HomeUnTravelView from './view/HomeUnTravelView';//=*=
 import I18nUtil from '../../util/I18nUtil';
@@ -44,8 +44,9 @@ import Key from '../../res/styles/Key';
 import CompCreateJourneyView from '../ComprehensiveOrder/CompCreateJourneyView';
 import TabView from './view/TabView';
 import Util from '../../util/Util';
+// import SearchInput from '../../custom/SearchInput';
 const FCM_SHOW_ADLIST = 'FCMSHOWADLIST';
-// import Swiper from 'react-native-swiper';//=*=
+// import Swiper from 'react-native-swiper';
 import ViewUtil from '../../util/ViewUtil';
 import AddpersonView from '../ComprehensiveOrder/View/AddpersonView';
 import SonyList from '../../res/js/SonyList';
@@ -59,9 +60,10 @@ import HTMLView from 'react-native-htmlview';
 let _this;
 
 class HomeScreen extends SuperView {
+  backPress;
   constructor(props) {
-      super(props);
-      this._navigationHeaderView = {
+    super(props);
+    this._navigationHeaderView = {
         title: '您好',
         // hide:true,
         statusBar: {
@@ -284,9 +286,19 @@ CreateBiometrics(){
           },
         );
         this.deleteApplyListener = DeviceEventEmitter.addListener('deleteApply',()=>{
-          this.props.setApply();
+          this.props.setApply(null);
           this.setState({
-              applyNum:null
+              applyNum:null,
+              selectApplyItem:null,
+              employees:[],
+              travellers:[],
+              ReferenceEmployeeId:null,
+              ReferenceEmployeeName:null,
+              ReferenceEmployee:null,
+              // ProjectId:null,
+              // ProjectName:null,
+              // ProjectItem:null,
+              // ApproveOrigin:{},
           })
         })
         this.letRefreshMassege = DeviceEventEmitter.addListener('refreshMassege',()=>{
@@ -637,10 +649,11 @@ CreateBiometrics(){
     try {
       // 1. 并行清理缓存（非阻塞）
       this._clearStorageCache();
+      
       // 2. 并行获取用户和客户信息（关键优化点）
       const [userInfo, customerInfo] = await Promise.all([
-          UserInfoDao.getUserInfo(),
-          UserInfoDao.getCustomerInfo()
+        UserInfoDao.getUserInfo(),
+        UserInfoDao.getCustomerInfo()
       ]);
 
       // 3. 批量更新状态，减少重渲染
@@ -652,7 +665,6 @@ CreateBiometrics(){
       
       // 设置审批来源
       Object.assign(ApproveOrigin, UserInfoUtil.ApproveOrigin(userInfo));
-      console.log('userInfo---',userInfo);
 
       // 批量更新状态
       this.setState({
@@ -780,16 +792,26 @@ CreateBiometrics(){
 
   getCurrentUserMessageSummary = () => {
         const{userInfo} = this.state;
-        console.log('获取用户信息',userInfo)
         CommonService.CurrentUserMessageSummary({ ReadStatus: 1 }).then(response => {
           if (response && response.success) {
             const sum = Object.values(response.data).reduce((acc, curr) => acc + curr, 0);
+            this.setState({
+              messageSummary: response.data,
+              allMessNum:sum
+            })
             // AliyunPush.setApplicationIconBadgeNumber(sum);
             this._navigationHeaderView = {
               title: (Util.Parse.isChinese()?'您好':'Hello') + (userInfo&&userInfo.Name?","+userInfo.Name:''),
-              statusBar: { backgroundColor: Theme.theme },
-              style: { backgroundColor: Theme.theme },
-              titleStyle: { color: 'white' },
+              // hide:true,
+              statusBar: {
+                  backgroundColor: Theme.theme,
+              },
+              style: {
+                  backgroundColor: Theme.theme,
+              },
+              titleStyle: {
+                  color: 'white'
+              },
               leftButton:<TouchableOpacity onPress={()=>{this.LeftClicked(true)}} style={{ }}>
                             <EvilIcons name={'navicon'} size={27} color={'#fff'} style={{paddingLeft:16}}/>
                               {/* <AntDesign name={'arrowleft'}
@@ -806,11 +828,7 @@ CreateBiometrics(){
                               null
                             }
                           </TouchableOpacity>            
-            }
-            this.setState({
-              messageSummary: response.data,
-              allMessNum:sum
-            })
+        }
           }
         }).catch(error => {
           console.log(error);
@@ -1434,7 +1452,7 @@ CreateBiometrics(){
            ViewUtil.getThemeButton2('下一步',this._nextClick) 
         }
        
-        {/* 广告弹框 */}
+        {/* 广告弹框 //=*= */}
         {/* {
             noticeAdList&&noticeAdList.length>0&&IsAddShow&& !this.isShowHomeAdd?
                 this._testAlert()
@@ -1481,21 +1499,19 @@ _addNewTravel=()=>{
               <AntDesign name={'adduser'} size={20} color={Theme.theme} />
           </TouchableOpacity>
           {
-              <FlatList
-                  nestedScrollEnabled={true} 
+              <FlatList 
                   style={{marginHorizontal:10}}
                   data={employees}
-                  keyExtractor={(item, index) => String(item?.PassengerOrigin?.EmployeeId ?? item?.Id ?? index)}
+                  keyExtractor = {(item, index) => index }
                   showsVerticalScrollIndicator={false}
                   renderItem={this._emRenderRow}
               />
           }
           {
-              <FlatList
-                  nestedScrollEnabled={true}
+              <FlatList 
                   style={{marginHorizontal:10}}
                   data={travellers}
-                  keyExtractor={(item, index) => String(item?.PassengerOrigin?.TravellerId ?? item?.Id ?? index)}
+                  keyExtractor = {(item, index) => index }
                   showsVerticalScrollIndicator={false}
                   renderItem={this._trRenderRow}
               />
@@ -1546,7 +1562,7 @@ _addNewTravel=()=>{
                                         })
                                     }}>
                                       <View style={[styles.tapStyle,{borderColor:selectTap==item.type?Theme.theme:Theme.promptFontColor,backgroundColor:selectTap==item.type?Theme.greenBg:'#fff'}]}>
-                                          <CustomText style={{fontSize:13, paddingVertical:8,paddingHorizontal:10,color:selectTap==item.type?Theme.theme:Theme.commonFontColor }} color={Theme.darkColor} text={item.name} />
+                                          <CustomText style={{fontSize:13, padding:10,color:selectTap==item.type?Theme.theme:Theme.commonFontColor }} color={Theme.darkColor} text={item.name} />
                                       </View>
                                     </TouchableOpacity>
                                     :null
@@ -1881,7 +1897,7 @@ choosePlay=()=>{
             <CustomText text={applyNum} style={{fontSize:14,color:Theme.commonFontColor}}></CustomText>
             <TouchableOpacity style={{alignItems:'center'}}
                   onPress={()=>{
-                        this.props.setApply();
+                        this.props.setApply(null);
                         this.setState({
                             applyNum:null
                         })
@@ -2388,7 +2404,7 @@ _getCompList=()=>{
             this.showLoadingView();
             CommonService.logout().then(response => {
                 if (response && response.success) {
-                    this.props.setApply()//清空申请单数据
+                    this.props.setApply(null)//清空申请单数据
                     UserInfoDao.removeAllInfo().then(() => {
                         this.hideLoadingView();
                         // UMNative.profileSignOff();
@@ -2615,7 +2631,6 @@ const getAction = dispatch => ({
 })
 
 export default connect(getProps, getAction)(HomeScreen);
-
 const drawerStyles = {
   drawer:{ 
      shadowColor:'#FFF', 
@@ -2719,14 +2734,14 @@ const styles = StyleSheet.create({
     flex:1
   },
   tapStyle:{
-      // height:34,
+      height:34,
       flexDirection:'row',
       alignItems:'center',
       justifyContent:'center',
       borderRadius:6,
       borderWidth:1,
       marginRight:10,
-      marginVertical:5,
+      marginVertical:5
   },
 
 })

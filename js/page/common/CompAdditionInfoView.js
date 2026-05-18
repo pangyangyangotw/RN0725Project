@@ -33,6 +33,57 @@ class CompAdditionInfoView extends React.Component {
         customerInfo: PropTypes.object.isRequired,
     }
 
+    _getWorkDicList = () => {
+        const { DicList1, customerInfo } = this.props;
+        if (Array.isArray(DicList1) && DicList1.length > 0) return DicList1;
+        if (customerInfo && Array.isArray(customerInfo.DictList)) return customerInfo.DictList;
+        return [];
+    }
+
+    _getConfigId = (obj) => {
+        if (!obj) return undefined;
+        return obj.Id !== undefined && obj.Id !== null ? obj.Id : obj.DictId;
+    }
+
+    _findDictItem = (dictItemList, cfg) => {
+        if (!Array.isArray(dictItemList) || !cfg) return undefined;
+        const cfgId = this._getConfigId(cfg);
+        const cfgCode = cfg.Code !== undefined && cfg.Code !== null ? cfg.Code : cfg.DictCode;
+        return dictItemList.find(item => {
+            if (!item) return false;
+            if (cfgCode !== undefined && cfgCode !== null && item.DictCode == cfgCode) return true;
+            return cfgId !== undefined && item.DictId == cfgId;
+        });
+    }
+
+    _getParentValue = (workDicList, obj, dictItemList) => {
+        const cfgId = this._getConfigId(obj);
+        if (!cfgId || !Array.isArray(workDicList)) return undefined;
+        const parentCfg = workDicList.find(i => i && i.NextId == cfgId);
+        if (!parentCfg) return undefined;
+        const parentItem = this._findDictItem(dictItemList, parentCfg);
+        return parentItem && parentItem.ItemName;
+    }
+
+    _isVisible = (workDicList, obj, dictMapList, dictItemList) => {
+        if (!obj) return false;
+        if (obj.showNext !== undefined && obj.showNext !== null) {
+            return !!obj.showNext;
+        }
+        const cfgId = this._getConfigId(obj);
+        if (!cfgId) return true;
+        const selfItem = this._findDictItem(dictItemList, obj);
+        if (selfItem && (selfItem.ItemName || selfItem.ItemId || selfItem.ItemInput)) return true;
+        if (!Array.isArray(workDicList) || workDicList.length === 0) return true;
+        const hasParent = workDicList.some(i => i && i.NextId == cfgId);
+        if (!hasParent) return true;
+        const parentName = this._getParentValue(workDicList, obj, dictItemList);
+        if (!parentName) return false;
+        const rules = (Array.isArray(dictMapList) ? dictMapList : []).filter(m => m && m.DictId == cfgId);
+        if (!rules || rules.length === 0) return true;
+        return rules.some(m => m && m.ParentName == parentName);
+    }
+
     _valueCHange = (text, obj) => {
         // obj.ItemName = text;
         // obj.ItemEnName = text;
@@ -68,27 +119,104 @@ class CompAdditionInfoView extends React.Component {
         }
         this.setState({});
     }
-    _toSelectDicList = (obj) => {
+
+    _clearCascadeByNextId = (nextId) => {
+        if (!nextId) return;
         const { AdditionIfo } = this.props;
-        NavigationUtils.push(this.props.navigation, 'DicList', {
-            title: obj.DictName,
-            Id: obj.DictId,
-            ParentValue:obj.parentValue,
-            callBack: (data) => {
-                    if(obj.NextId){
-                        AdditionIfo.DictItemList.forEach(itemDic => {
-                            if(itemDic.DictId == obj.NextId){
-                                itemDic.parentValue = data.Name
-                            }
-                        })
+        const workDicList = this._getWorkDicList();
+        let curId = nextId;
+        while (curId) {
+            if (AdditionIfo && Array.isArray(AdditionIfo.DictItemList) && AdditionIfo.DictItemList.length > 0) {
+                for (let i = AdditionIfo.DictItemList.length - 1; i >= 0; i--) {
+                    const it = AdditionIfo.DictItemList[i];
+                    if (it && it.DictId == curId) {
+                        AdditionIfo.DictItemList.splice(i, 1);
                     }
-                    obj.ItemId = data.Id;
-                    obj.Id = data.Id;
-                    obj.ItemSerialNumber = data.SerialNumber;
-                    obj.ItemName = data.Name;
-                    obj.ItemEnName = data.EnName;
-                    // obj.ItemInput = data.SerialNumber+" - "+data.Name+" - "+data.EnName
-                    obj.ItemInput = data.Name
+                }
+            }
+            const cfg = Array.isArray(workDicList) ? workDicList.find(i => i && this._getConfigId(i) == curId) : undefined;
+            curId = cfg && cfg.NextId;
+        }
+    }
+
+    _clearSelectedDic = (obj) => {
+        if (!obj) return;
+        const { AdditionIfo } = this.props;
+        const cfgId = this._getConfigId(obj);
+        if (obj.NextId) {
+            this._clearCascadeByNextId(obj.NextId);
+        }
+        if (AdditionIfo && Array.isArray(AdditionIfo.DictItemList) && AdditionIfo.DictItemList.length > 0) {
+            for (let i = AdditionIfo.DictItemList.length - 1; i >= 0; i--) {
+                const it = AdditionIfo.DictItemList[i];
+                if (!it) continue;
+                if ((obj.Code !== undefined && obj.Code !== null && it.DictCode == obj.Code) || it.DictId == cfgId) {
+                    AdditionIfo.DictItemList.splice(i, 1);
+                    break;
+                }
+            }
+        }
+        this.setState({});
+    }
+    _toSelectDicList = (obj) => {
+        if (!obj) return;
+        const { AdditionIfo, customerInfo } = this.props;
+        const workDicList = this._getWorkDicList();
+        const dictMapList = customerInfo && customerInfo.DictMapList;
+        const dictItemList = AdditionIfo && AdditionIfo.DictItemList;
+        const cfgId = this._getConfigId(obj);
+        const cfgName = obj.Name !== undefined && obj.Name !== null ? obj.Name : obj.DictName;
+        const cfgEnName = obj.EnName !== undefined && obj.EnName !== null ? obj.EnName : obj.DictEnName;
+        const parentValue = obj.BeforeParentName !== undefined && obj.BeforeParentName !== null
+            ? obj.BeforeParentName
+            : (obj.parentValue !== undefined && obj.parentValue !== null ? obj.parentValue : this._getParentValue(workDicList, obj, dictItemList));
+        const dic = this._findDictItem(dictItemList, obj);
+        const prevSelectName = dic ? dic.ItemName : undefined;
+
+        NavigationUtils.push(this.props.navigation, 'DicList', {
+            title: Util.Parse.isChinese() ? cfgName : (cfgEnName || cfgName),
+            Id: cfgId,
+            ParentValue: parentValue,
+            callBack: (data) => {
+                const isChanged = prevSelectName !== undefined && prevSelectName !== data.Name;
+                if (isChanged && obj.NextId) {
+                    this._clearCascadeByNextId(obj.NextId);
+                }
+
+                const cfgCode = obj.Code !== undefined && obj.Code !== null ? obj.Code : obj.DictCode;
+                const cfgDictName = cfgName;
+                const cfgDictEnName = cfgEnName;
+
+                const exist = this._findDictItem(dictItemList, obj);
+                if (exist) {
+                    exist.DictId = cfgId;
+                    exist.Id = cfgId;
+                    exist.DictName = cfgDictName;
+                    exist.DictEnName = cfgDictEnName;
+                    exist.ItemId = data.Id;
+                    exist.ItemSerialNumber = data.SerialNumber;
+                    exist.ItemName = data.Name;
+                    exist.ItemEnName = data.EnName;
+                    exist.ItemInput = data.Name;
+                    exist.DictCode = cfgCode;
+                    exist.NeedInput = obj.NeedInput;
+                } else {
+                    const model = {
+                        DictId: cfgId,
+                        Id: cfgId,
+                        DictName: cfgDictName,
+                        DictEnName: cfgDictEnName,
+                        ItemId: data.Id,
+                        ItemSerialNumber: data.SerialNumber,
+                        ItemName: data.Name,
+                        ItemEnName: data.EnName,
+                        ItemInput: data.Name,
+                        DictCode: cfgCode,
+                        NeedInput: obj.NeedInput,
+                        RemarkNo: obj.RemarkNo,
+                    };
+                    AdditionIfo && AdditionIfo.DictItemList && AdditionIfo.DictItemList.push(model);
+                }
                 this.setState({});
             }
         })
@@ -96,6 +224,32 @@ class CompAdditionInfoView extends React.Component {
 
     render() {
         const {fromNo,customerInfo,AdditionIfo,DicList1,PdfDictList,NoApproval,haveHotel} = this.props;
+        const workDicList = this._getWorkDicList();
+        const dictMapList = customerInfo && customerInfo.DictMapList;
+        const dictItemList = AdditionIfo && AdditionIfo.DictItemList;
+        const shownCache = new Map();
+        const visiting = new Set();
+        const isCfgShown = (cfg) => {
+            if (!cfg) return false;
+            const cfgId = this._getConfigId(cfg);
+            if (!cfgId) return false;
+            if (shownCache.has(cfgId)) return shownCache.get(cfgId);
+            if (visiting.has(cfgId)) return false;
+            visiting.add(cfgId);
+            const showNext = this._isVisible(workDicList, cfg, dictMapList, dictItemList);
+            let shown = false;
+            if (showNext && (cfg.BusinessCategory & fromNo)) {
+                const parentCfg = Array.isArray(workDicList) ? workDicList.find(i => i && i.NextId == cfgId) : undefined;
+                if (!parentCfg) {
+                    shown = !!cfg.ShowInOrder;
+                } else {
+                    shown = isCfgShown(parentCfg);
+                }
+            }
+            visiting.delete(cfgId);
+            shownCache.set(cfgId, shown);
+            return shown;
+        };
         //找到AdditionIfo.DictItemList中和PdfDictList中名称相同的对象，并将PdfDictList中对象的属性值赋给AdditionIfo.DictItemList中对象        
         if(PdfDictList&&PdfDictList.length>0){
             PdfDictList.forEach((pdfItem,index)=>{
@@ -112,10 +266,11 @@ class CompAdditionInfoView extends React.Component {
             <View style={styles.view}>
                { DicList1&&DicList1.length>0 ?null:
                 customerInfo.DictList&&customerInfo.DictList.map((obj, index)=>{
+                        const showNext = this._isVisible(workDicList, obj, dictMapList, dictItemList);
+                        const showItem = isCfgShown(obj);
                         let itemIndex =AdditionIfo&&AdditionIfo.DictItemList&&AdditionIfo.DictItemList.find(item => 
                             item.DictCode === obj.Code
                         );
-                        // console.log("itemIndex",itemIndex)
                             if(obj.NeedInput&&itemIndex ){
                                 // itemIndex.Id = obj.Id
                                 // itemIndex.DictId = obj.Id
@@ -128,11 +283,10 @@ class CompAdditionInfoView extends React.Component {
                                 // itemIndex.ItemName = obj.ItemName
                                 // itemIndex.DictCode = obj.Code
                                 // itemIndex.NeedInput = obj.NeedInput
-                                itemIndex.IsShowWhenMissingHotelUnitInMassOrder = obj.IsShowWhenMissingHotelUnitInMassOrder
-
+                                 itemIndex.IsShowWhenMissingHotelUnitInMassOrder = obj.IsShowWhenMissingHotelUnitInMassOrder
                            }
                        return (
-                        obj.BusinessCategory&fromNo && obj.ShowInOrder? //判断指定业务
+                        showItem ? //判断指定业务
                             (
                                 customerInfo.CustomerHandleName==="Ontheway.TMC.CustomerHandlers.Shell.ShellHandler"&& obj.Name==="approver's email address")?
                                 !NoApproval?
@@ -173,7 +327,10 @@ class CompAdditionInfoView extends React.Component {
                                                 this._valueCHange(text, obj);
                                             }}
                                             select_DicList={()=>{
-                                                this._toSelectDicList(itemIndex)
+                                                this._toSelectDicList(obj)
+                                            }}
+                                            clear_DicList={()=>{
+                                                this._clearSelectedDic(obj)
                                             }}
                                             haveHotel={haveHotel}
                             />
@@ -185,11 +342,13 @@ class CompAdditionInfoView extends React.Component {
                {
                     DicList1 && DicList1.length > 0 ?//申请单
                         DicList1.map((obj, index) => {
+                            const showNext = this._isVisible(workDicList, obj, dictMapList, dictItemList);
+                            const showItem = isCfgShown(obj);
                             let itemIndex =AdditionIfo&&AdditionIfo.DictItemList&&AdditionIfo.DictItemList.find(
                                 item => item.DictCode == obj.DictCode
                             );
                             return (
-                                obj.BusinessCategory&fromNo && obj.ShowInOrder?
+                                showItem?
                                     <InfoDicView index={index} 
                                                     obj={obj} 
                                                     itemIndex={itemIndex} 
@@ -197,7 +356,10 @@ class CompAdditionInfoView extends React.Component {
                                                         this._valueCHange(text, obj);
                                                     }}
                                                     select_DicList={()=>{
-                                                        this._toSelectDicList(itemIndex)
+                                                        this._toSelectDicList(obj)
+                                                    }}
+                                                    clear_DicList={()=>{
+                                                        this._clearSelectedDic(obj)
                                                     }}
                                                     editable={true}
                                     />
@@ -212,7 +374,7 @@ class CompAdditionInfoView extends React.Component {
                                     //             :
                                     //             <View style={styles.rowRight}>
                                     //                 <CustomText text={itemIndex ? itemIndex.ItemName : obj.Remark} style={{ color: itemIndex ? '#333' : 'gray', flex: 1 }} onPress={this._toSelectDicList.bind(this, itemIndex)} />
-                                    //                 <Ionicons name={'chevron-forward'} size={22} color={'lightgray'} />
+                                    //                 <Ionicons name={'ios-arrow-forward'} size={22} color={'lightgray'} />
                                     //             </View>
                                     //     }
                                     // </View>

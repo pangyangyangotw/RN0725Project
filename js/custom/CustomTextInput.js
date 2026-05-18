@@ -12,11 +12,10 @@ export default class CustomeTextInput extends React.Component {
         return (
             <TextInput  ref={component=>this._root=component} 
                         {...this.props} 
-                        underlineColorAndroid='transparent'
                         returnKeyType="done" 
                         placeholder ={I18nUtil.translate(placeholder)} 
                         placeholderTextColor={Theme.promptFontColor} 
-                        style={[style]}          
+                        style={[{ backgroundColor: 'transparent' }, style]}          
             />
         )
     }

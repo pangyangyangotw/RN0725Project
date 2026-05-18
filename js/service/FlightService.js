@@ -255,4 +255,19 @@ export default class FlightService {
     static FltOrderValidateTicketStatus(Model){
         return FetchHelper.post(baseUrl + api.flight.FltOrderValidateTicketStatus, Model)
     }
+    static OrderPnrSeatInfo(Model){
+        return FetchHelper.post(baseUrl + api.flight.OrderPnrSeatInfo, Model)
+    }
+    //查询座位
+    static OrderSeatMap(Model){
+        return FetchHelper.post(baseUrl + api.flight.OrderSeatMap, Model)
+    }
+    //选择座位
+    static OrderSeatChoose(Model){
+        return FetchHelper.post(baseUrl + api.flight.OrderSeatChoose, Model)
+    }
+    //删除座位
+    static OrderSeatDelete(Model){
+        return FetchHelper.post(baseUrl + api.flight.OrderSeatDelete, Model)
+    }
 }
