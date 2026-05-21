@@ -29,7 +29,7 @@ import FlightChangeSearchScreen from './FlightChangeSearchScreen';
 import FlightChangeScreen from './FlightChangeScreen';
 import FlightPaymentScreen from './FlightPaymentScreen';
 import FlightMorePriceScreen from './FlightMorePriceScreen';
-// import FlightRtMorePriceScreen from './FlightRtMorePriceScreen';
+import FlightRtMorePriceScreen from './FlightRtMorePriceScreen';
 // import FlightChangeMoreScreen from './FlightChangeMoreScreen';
 // import FlightChangeListScreen from './FlightChangeListScreen';
 import Flight_compCreatOrderScreen from './Flight_compCreatOrderScreen';
@@ -95,9 +95,9 @@ const flightConfig = {
     FlightMorePrice: {
         screen: FlightMorePriceScreen
     },
-    // FlightRtMorePrice: {
-    //     screen: FlightRtMorePriceScreen
-    // },
+    FlightRtMorePrice: {
+        screen: FlightRtMorePriceScreen
+    },
     Flight_compCreatOrderScreen: {
         screen: Flight_compCreatOrderScreen
     },

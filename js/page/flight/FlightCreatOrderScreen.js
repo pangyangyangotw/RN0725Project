@@ -1811,6 +1811,9 @@ class FlightCreateOrderScreen extends SuperView {
             return;
         }
         OpenGetFile.getFile(this).then(response => {
+            if (!response) {
+                return;
+            }
             fileList.push(response);
             this.setState({
                 fileList:fileList

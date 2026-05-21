@@ -46,7 +46,6 @@ class AdditionInfoView extends React.Component {
 
         const dicListArr = customerDicList.map(item => item.Id);
         const employeeArr = employeeDictList.map(item => item.Id);
-        console.log('dicListArr', customerDicList);
         let diffArr;
         if (fromNo === 128) {
             diffArr = dicListArr;

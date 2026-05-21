@@ -38,6 +38,8 @@ class FlightListScreen extends SuperView {
         super(props);
         this.params = (props.route && props.route.params) || (props.navigation && props.navigation.state && props.navigation.state.params) || {};
         let ShieldStops = this.params.customerInfo?.Setting?.FrontExtraConfig?.ShieldStops || false
+        const initSelectCabin = this.params && this.params.selectCabin ? this.params.selectCabin : '不限';
+        const initIsFilter = initSelectCabin !== '不限';
         this._navigationHeaderView = {
             title: this.params.isChange ? (I18nUtil.translate(this.params.DepartureCityName) + '-' + I18nUtil.translate(this.params.ArrivalCityName)) : I18nUtil.translate(this.params.goCityData.Name) + '-' + I18nUtil.translate(this.params.arrivalCityData.Name),
             rightButton: props.feeType === 1 ? ViewUtil.getRightImageButton(this._getTravelRuleAlert) : null
@@ -59,9 +61,9 @@ class FlightListScreen extends SuperView {
                 { title: '航司', data: ['不限'] },
                 // { title: '舱位', data: ['不限'] }
                 { title: '机型', data: '不限' },
-                { title: '舱位', data: '不限' }
+                { title: '舱位', data: initSelectCabin }
             ],
-            isFilter: false,
+            isFilter: initIsFilter,
             isDirect: ShieldStops,
             isShare: true,
             currentLowPrice: 0,
@@ -87,7 +89,7 @@ class FlightListScreen extends SuperView {
             user_info:{},
             trainLow:null,
             showTrain:true,
-            selectCabin: this.params.selectCabin,
+            selectCabin: initSelectCabin,
             craftTypeList: [],
         }
     }
@@ -112,6 +114,7 @@ class FlightListScreen extends SuperView {
                 craftTypeList : result || []
             });
         })
+        this._loadRecommendedTrainQuery();//火车推荐接口
     }
 
     /**
@@ -595,7 +598,6 @@ class FlightListScreen extends SuperView {
                     // if (this.state.bottomBtnIndex === 1) {
                     this._bottomSelectClick(this.state.bottomBtnIndex);
                     // }
-                    this._loadRecommendedTrainQuery();//火车推荐接口
                 })
             } else {
                 this.toastMsg(response.message || '获取数据失败请重试');
@@ -906,7 +908,11 @@ class FlightListScreen extends SuperView {
                 arrivalDate: arrivalDate,
                 isSingle: isSingle,
                 canbinOption:this.params.canbinOption,
-                ResBookDesig: this.state.filterArr.find(item => item.title === '舱位'),
+                filterArr: Util.Encryption.clone(this.state.filterArr),
+                isFilter: this.state.isFilter,
+                isDirect: this.state.isDirect,
+                isShare: this.state.isShare,
+                ResBookDesig: Util.Encryption.clone(this.state.filterArr.find(item => item.title === '舱位')),
             }
         }
         params.goFlightData = data;

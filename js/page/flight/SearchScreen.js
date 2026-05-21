@@ -102,7 +102,8 @@ class SearchScreen extends SuperView {
             goandback:goandback,
             goCityDisplay2:'',
             arrivalCityDisplay2:'',
-            selectCabin:'经济舱',
+            // selectCabin:'经济舱',
+            selectCabin:'不限',
             canbinOption:['不限','经济舱', '超值经济舱', '商务舱/公务舱', '头等舱'],
         }
     }

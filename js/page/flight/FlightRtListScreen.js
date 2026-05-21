@@ -63,7 +63,7 @@ class FlightRtListScreen extends SuperView {
             isFilter: this.params.isFilter? true : false,
             isDirect: this.params?.isDirect? this.params.isDirect : false,
             // isDirect: false,
-            isShare: this.params?.isShare===false? this.params.IsShare : true,
+            isShare: this.params && this.params.isShare === false ? false : true,
             currentLowPrice: 0,
             customer_info:{},
             user_info:{},
@@ -530,7 +530,9 @@ class FlightRtListScreen extends SuperView {
                     bottomBtnIndex: 2
                 })
                 break;
-            case 3:
+            case 3: {
+                const cabinItem = this.state.filterArr && this.state.filterArr.find(item => item.title === '舱位');
+                const selectCabin = cabinItem && cabinItem.data ? cabinItem.data : '不限';
                 this.push('FloghtCotidionScreen', {
                     refresh: (data, filter, isDirect, isFilter, isShare) => {
                         this.setState({
@@ -554,13 +556,15 @@ class FlightRtListScreen extends SuperView {
                         })
                     },
                     data: [].concat(this.state.recordSection),
-                    filter: this.state.filterArr,
+                    filter: Util.Encryption.clone(this.state.filterArr),
                     isDirect: this.state.isDirect,
                     isShare: this.state.isShare,
                     canbinOption:this.params.canbinOption,
-                    ResBookDesig:this.params.ResBookDesig,
+                    ResBookDesig: cabinItem,
+                    selectCabin: selectCabin,
                 });
                 break;
+            }
         }
     }
     /**

@@ -210,7 +210,7 @@ class FlightRtRuleScreen extends SuperView {
                             <TouchableHighlight underlayColor='transparent' onPress={this._selectReason.bind(this, 0)}>
                                 <View style={styles.viewCenter}>
                                     <CustomText style={{ color: lowPriceData.selectReaon ? 'black' : 'gray' }} text={lowPriceData.selectReaon ? (Util.Parse.isChinese()? lowPriceData.selectReaon.Reason:lowPriceData.selectReaon.ReasonEn) : '请选择'} />
-                                    <Ionicons name={'ios-arrow-forward'}
+                                    <Ionicons name={'chevron-forward'}
                                         size={20}
                                         style={{ color: 'lightgray' }}
                                     />
@@ -239,7 +239,7 @@ class FlightRtRuleScreen extends SuperView {
                             <TouchableHighlight underlayColor='transparent' onPress={this._selectReason.bind(this, 1)}>
                                 <View style={styles.viewCenter}>
                                     <CustomText style={{ color: beforeDayData.selectReaon ? 'black' : 'gray' }} text={beforeDayData.selectReaon ? (Util.Parse.isChinese()?beforeDayData.selectReaon.Reason:beforeDayData.selectReaon.ReasonEn) : '请选择'} />
-                                    <Ionicons name={'ios-arrow-forward'}
+                                    <Ionicons name={'chevron-forward'}
                                         size={20}
                                         style={{ color: 'lightgray' }}
                                     />
@@ -278,7 +278,7 @@ class FlightRtRuleScreen extends SuperView {
                             <TouchableHighlight underlayColor='transparent' onPress={this._selectReason.bind(this, 2)}>
                                 <View style={styles.viewCenter}>
                                     <CustomText style={{ color: cabinDisCountData.selectReaon ? 'black' : 'gray' }} text={cabinDisCountData.selectReaon ? (Util.Parse.isChinese()?cabinDisCountData.selectReaon.Reason:cabinDisCountData.selectReaon.ReasonEn): '请选择'} />
-                                    <Ionicons name={'ios-arrow-forward'}
+                                    <Ionicons name={'chevron-forward'}
                                         size={20}
                                         style={{ color: 'lightgray' }}
                                     />
@@ -310,7 +310,7 @@ class FlightRtRuleScreen extends SuperView {
                                         text={canbinData?.selectReaon ? (Util.Parse.isChinese() ? canbinData.selectReaon?.Reason || '' : canbinData.selectReaon?.ReasonEn || '') : '请选择原因'} 
                                     />
                                     <Ionicons 
-                                        name="ios-arrow-forward"
+                                        name="chevron-forward"
                                         size={20}
                                         style={{ color: 'lightgray' }} 
                                     />

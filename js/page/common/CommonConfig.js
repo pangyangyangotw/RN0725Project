@@ -1,6 +1,6 @@
 import WebViewScreen from './WebViewScreen';
 import CalendarScreen from './CalendarScreen';
-// import RuleReasonSelect from './RuleReasonSelect';
+import RuleReasonSelect from './RuleReasonSelect';
 import PassnegerListScreen from './PassnegerListScreen';
 import ProjectScreen from './ProjectScreen';
 import DicListScreen from './DicListScreen';
@@ -26,9 +26,9 @@ const common = {
     Calendar: {
         screen: CalendarScreen
     },
-    // RuleReasonSelect: {
-    //     screen: RuleReasonSelect
-    // },
+    RuleReasonSelect: {
+        screen: RuleReasonSelect
+    },
     PassengerViewScreen: {
         screen: PassnegerListScreen
     },

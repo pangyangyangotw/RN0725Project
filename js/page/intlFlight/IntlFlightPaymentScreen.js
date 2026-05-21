@@ -4,7 +4,9 @@ import {
     Text,
     Image,
     StyleSheet,
-    TouchableHighlight
+    TouchableHighlight,
+    InteractionManager,
+    DeviceEventEmitter
 } from 'react-native';
 import SuperView from '../../super/SuperView';
 import NavigationUtils from '../../navigator/NavigationUtils';
@@ -65,6 +67,9 @@ class IntlFlightPaymentScreen extends SuperView {
                 return ViewUtil.getAlertButton('退出', () => {
                     this.dismissAlertView();
                     NavigationUtils.popToTop(this.props.navigation);
+                    InteractionManager.runAfterInteractions(() => {
+                        DeviceEventEmitter.emit('deleteApply', {});
+                    });
                 }, '继续支付', () => {
                     this.dismissAlertView();
                 })

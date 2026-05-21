@@ -280,7 +280,7 @@ class PassengerView extends React.Component {
                 let CHName = data.CertificateType==="身份证" || data.CertificateType==="Chinese ID Card" || ((data.CertificateType==="海员证" || data.CertificateType==="Seaman's Book")&&data.NationalCode==="CN")|| data.CertificateType==="港澳台居民居住证"|| data.CertificateType==="Residence Permit for Hong Kong,Macau and Taiwan Residents"
                 let CHName2 = (data.CertificateType==="护照" || data.CertificateType==="Passport") && data.NationalCode==="CN"
                 let selcetName = data.selcetName && Utils.Read.certificateType2(data.CertificateType) === 128
-                let trainPassenger = from === 'train' && Util.Read.certificateType2(data.CertificateType)!=1024
+                let trainPassenger = from === 'train' && Util.Read.certificateType2(data.CertificateType)!=1024 && !(Utils.Read.certificateType2(data.CertificateType)==2 && (data.NationalCode!="CN" || data.NationalCode!="HK" || data.NationalCode!="MO" || data.NationalCode!="TW"))
                 return (
                     <View key={index} style={data.highLight?styles.viewStyle2:styles.viewStyle1}>
                         <TouchableHighlight underlayColor='transparent' onPress={this._editPassengerRowClick.bind(this, index, type, cusInsurances)}>
@@ -323,7 +323,7 @@ class PassengerView extends React.Component {
                                         }                                    
                                     </View>
                                     <View style={{ flex: 1, alignItems: 'flex-end', justifyContent: 'center' }}>
-                                        <Ionicons name={'ios-arrow-forward'} size={20} color={'lightgray'} />
+                                        <Ionicons name={'chevron-forward'} size={20} color={'lightgray'} />
                                     </View>
                                 </View>
                         </TouchableHighlight>

@@ -32,7 +32,7 @@ export default class ForgetPwdScreen1 extends SuperView {
       account:null,
       email:null,
       emailValidateCode:null,
-      options:['+86 10 52021652（北京）','+86 21 61375119（上海）','+86 10 52021732（广州）'],
+      options:['+86 10 57301448（北京）','+86 21 20437368（上海）','+86 20 28657801（广州）'],
       countShow:false,
     }
   }
@@ -236,8 +236,8 @@ export default class ForgetPwdScreen1 extends SuperView {
 
   _handlePress = (index) =>{
 
-    let number = ['+86 10 52021652（北京）','+86 21 61375119（上海）','+86 10 52021732（广州）']
-    let urlArr = ['tel:10 52021652','tel:10 61375119','tel:10 52021732']
+    let number = ['+86 10 57301448（北京）','+86 21 20437368（上海）','+86 20 28657801（广州）']
+    let urlArr = ['tel:10 57301448 ','tel:21 20437368','tel:20 28657801']
     let url = urlArr[index]
       Linking.canOpenURL(url).then(supported => {
         if (supported) {
