@@ -1424,7 +1424,7 @@ class ApplicationChangeOrderScreen extends SuperView {
                                     )
                                 }):<CustomText text={'请选择出发地'} style={{ fontSize: 13, color:'gray',marginLeft:3}} />
                             }
-                            <Ionicons name={'ios-arrow-forward'} size={20} color={'lightgray'} style={{ marginLeft: 5 }} />
+                            <Ionicons name={'chevron-forward'} size={20} color={'lightgray'} style={{ marginLeft: 5 }} />
                         </View>
                     </View>
                 </TouchableHighlight>
@@ -1439,7 +1439,7 @@ class ApplicationChangeOrderScreen extends SuperView {
                                     )
                                 }):<CustomText text={'请选择目的地'} style={{ fontSize: 13, color:'gray',marginLeft:3}} />
                             }
-                            <Ionicons name={'ios-arrow-forward'} size={20} color={'lightgray'} style={{ marginLeft: 5 }} />
+                            <Ionicons name={'chevron-forward'} size={20} color={'lightgray'} style={{ marginLeft: 5 }} />
                         </View>
                     </View>
                 </TouchableHighlight>
@@ -1484,7 +1484,7 @@ class ApplicationChangeOrderScreen extends SuperView {
                                 })
                             }
                         </View>
-                        <Ionicons name={'ios-arrow-forward'} size={20} color={'lightgray'} style={{ marginLeft: 5 }} />
+                        <Ionicons name={'chevron-forward'} size={20} color={'lightgray'} style={{ marginLeft: 5 }} />
                     </View>
                 </TouchableHighlight>
             </View>:
@@ -1524,7 +1524,7 @@ class ApplicationChangeOrderScreen extends SuperView {
                                         <CustomText text='国内/国际行程' style={{ flex: 5 }} />
                                         <View style={{ flexDirection: 'row-reverse', alignItems: 'flex-end', flex: 5}}>
                                             {/* <CustomText text={obj.isNational ? '国际' : '国内'} style={{ fontSize: 16 }} />
-                                            <Ionicons name={'ios-arrow-forward'} size={22} color={'lightgray'} style={{ marginLeft: 5 }} /> */}
+                                            <Ionicons name={'chevron-forward'} size={22} color={'lightgray'} style={{ marginLeft: 5 }} /> */}
                                             <View style={[{ borderColor: !obj.isNational ? Theme.theme : Theme.darkColor, backgroundColor: !obj.isNational ? Theme.greenBg :'#fff' }, styles.borderAll]}>
                                                 <CustomText text='国内' style={{ color: !obj.isNational ? Theme.theme : 'black' }} />
                                             </View>
@@ -1567,7 +1567,7 @@ class ApplicationChangeOrderScreen extends SuperView {
                                                 })
                                             }
                                         </View>
-                                        <Ionicons name={'ios-arrow-forward'} size={20} color={'lightgray'} style={{ marginLeft: 5 }} />
+                                        <Ionicons name={'chevron-forward'} size={20} color={'lightgray'} style={{ marginLeft: 5 }} />
                                     </View>
                                 </TouchableHighlight>
                             </View>

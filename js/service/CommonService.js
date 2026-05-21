@@ -383,64 +383,64 @@ export default class CommonService {
     }
 
    // 高危城市提示
-//    static HighRiskPC = (model,otwThis)=>{
-//         return new Promise((resovle,reject)=>{
-//             // otwThis.showLoadingView();
-//             FetchHelper.post(baseUrl + api.HighRiskPC,model).then(res=>{
-//                 // otwThis.hideLoadingView();
-//                 if(res && res.success){
-//                     if(res.data){
-//                         let highRisk = res.data.find(obj=>obj.Type == 2);
-//                         if(highRisk){
-//                             if(highRisk.Level == 3 || highRisk.Level == 2){
-//                                 Pop.show(
-//                                     <View style={{ width: '80%', backgroundColor:'#fff',borderRadius:8,padding:10}}>
-//                                     <View style={{alignItems:'center',justifyContent:'center'}}>
-//                                         <CustomText text={'温馨提示'} style={{margin:6,fontSize:18, fontWeight:'bold'}} />
-//                                     </View>
-//                                     {/* <ScrollView style={{}}>
-//                                         <CustomText text={highRisk.Message} style={{padding:2,fontSize:14}}/>
-//                                     </ScrollView> */}
-//                                         <ScrollView style={{width:'100%'}}>
-//                                                 <HTMLView value={highRisk.Message} style={{ padding:12}} /> 
-//                                         </ScrollView>
-//                                     <TouchableHighlight underlayColor='transparent' 
-//                                                 style={{height:40,alignItems:'center',justifyContent:'center',marginTop:10,borderTopWidth:1,borderColor:Theme.lineColor}}
-//                                                 onPress={()=>{
-//                                                     Pop.hide()
-//                                                         if(highRisk.Level == 2){
-//                                                         resovle(highRisk);
-//                                                         }
-//                                                     }}>
-//                                                 <CustomText  text='确定' style={{fontSize:19,color:Theme.theme}}/>
-//                                         </TouchableHighlight>
-//                                     </View>
-//                                     ,{animationType: 'fade', maskClosable: false, onMaskClose: ()=>{}})
-//                             }else{
-//                                 if(highRisk.Level == 0){
-//                                     resovle();
-//                                 }else{
-//                                     resovle(highRisk);
-//                                 }
+   static HighRiskPC = (model,otwThis)=>{
+        return new Promise((resovle,reject)=>{
+            // otwThis.showLoadingView();
+            FetchHelper.post(baseUrl + api.HighRiskPC,model).then(res=>{
+                // otwThis.hideLoadingView();
+                if(res && res.success){
+                    if(res.data){
+                        let highRisk = res.data.find(obj=>obj.Type == 2);
+                        if(highRisk){
+                            if(highRisk.Level == 3 || highRisk.Level == 2){
+                                Pop.show(
+                                    <View style={{ width: '80%', backgroundColor:'#fff',borderRadius:8,padding:10}}>
+                                    <View style={{alignItems:'center',justifyContent:'center'}}>
+                                        <CustomText text={'温馨提示'} style={{margin:6,fontSize:18, fontWeight:'bold'}} />
+                                    </View>
+                                    {/* <ScrollView style={{}}>
+                                        <CustomText text={highRisk.Message} style={{padding:2,fontSize:14}}/>
+                                    </ScrollView> */}
+                                        <ScrollView style={{width:'100%'}}>
+                                                <HTMLView value={highRisk.Message} style={{ padding:12}} /> 
+                                        </ScrollView>
+                                    <TouchableHighlight underlayColor='transparent' 
+                                                style={{height:40,alignItems:'center',justifyContent:'center',marginTop:10,borderTopWidth:1,borderColor:Theme.lineColor}}
+                                                onPress={()=>{
+                                                    Pop.hide()
+                                                        if(highRisk.Level == 2){
+                                                        resovle(highRisk);
+                                                        }
+                                                    }}>
+                                                <CustomText  text='确定' style={{fontSize:19,color:Theme.theme}}/>
+                                        </TouchableHighlight>
+                                    </View>
+                                    ,{animationType: 'fade', maskClosable: false, onMaskClose: ()=>{}})
+                            }else{
+                                if(highRisk.Level == 0){
+                                    resovle();
+                                }else{
+                                    resovle(highRisk);
+                                }
                             
-//                             }
-//                         }else{
-//                             resovle();
-//                         }
-//                     //    console.log(highRisk);
-//                     }else{
-//                         resovle(); 
-//                     }
-//                 }else{
-//                     otwThis && otwThis.toastMsg(res.message || '获取数据失败，请重试');
-//                 }
-//             }).catch(error=>{
-//                 // otwThis.hideLoadingView();
-//             otwThis && otwThis.toastMsg(error.message || '获取数据失败，请重试');
-//             reject(error);
-//             });
-//         })
-//     }
+                            }
+                        }else{
+                            resovle();
+                        }
+                    //    console.log(highRisk);
+                    }else{
+                        resovle(); 
+                    }
+                }else{
+                    otwThis && otwThis.toastMsg(res.message || '获取数据失败，请重试');
+                }
+            }).catch(error=>{
+                // otwThis.hideLoadingView();
+            otwThis && otwThis.toastMsg(error.message || '获取数据失败，请重试');
+            reject(error);
+            });
+        })
+    }
     static HighRiskPC2 = (model,otwThis)=>{
         return FetchHelper.post(baseUrl + api.HighRiskPC,model);
     }

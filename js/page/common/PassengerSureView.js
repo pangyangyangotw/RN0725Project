@@ -39,15 +39,6 @@ class PassengerSureView extends React.Component {
         let isHideAttribute = customerInfo && customerInfo.Setting && customerInfo.Setting.IsHiddenDepartment && customerInfo.Setting.IsHiddenProject;
         return (
             <View style={{marginHorizontal:10, borderRadius:6,backgroundColor: 'white', marginTop:10}}>
-                {/* <TouchableHighlight underlayColor='transparent' onPress={this._showDetail}>
-                    <View style={styles.header}>
-                        <CustomText text={from === 'flight' || from === 'intlFlight' ? '乘机人' : (from === 'train' ? "乘车人" : (from === 'hotel' ? '入住人' : ''))} />
-                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <CustomText text={isShow ? '收起详情' : '展开详情'} style={{ color: Theme.theme, marginRight: 5 }} />
-                            <Ionicons name={isShow ? 'ios-arrow-up' : 'ios-arrow-down'} size={24} color={'gray'} style={{ marginRight: 5 }} />
-                        </View>
-                    </View>
-                </TouchableHighlight> */}
                 {
                     isShow ?
                         PassengerList && PassengerList.map((item, index) => {

@@ -2534,7 +2534,7 @@ _changeLanguageNotif = () => {
     return (
       <View>
         <TouchableOpacity onPress={this._toNoticeCenter} style={{ padding: 8, paddingLeft: 12 }}>
-          <Ionicons name={'ios-arrow-back'}
+          <Ionicons name={'chevron-back'}
             size={26}
             style={{ color: Theme.fontColor }}
           />
