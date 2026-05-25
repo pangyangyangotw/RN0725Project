@@ -31,7 +31,7 @@ import FlightPaymentScreen from './FlightPaymentScreen';
 import FlightMorePriceScreen from './FlightMorePriceScreen';
 import FlightRtMorePriceScreen from './FlightRtMorePriceScreen';
 // import FlightChangeMoreScreen from './FlightChangeMoreScreen';
-// import FlightChangeListScreen from './FlightChangeListScreen';
+import FlightChangeListScreen from './FlightChangeListScreen';
 import Flight_compCreatOrderScreen from './Flight_compCreatOrderScreen';
 import Flight_compEditPassengerScreen from './Flight_compEditPassengerScreen';
 import InvoiceListScreen from './InvoiceListScreen';
@@ -46,9 +46,9 @@ const flightConfig = {
     FlightScreenIndex: {
         screen: FlightListScreen
     },
-    // FLightChangeList: {
-    //     screen: FlightChangeListScreen
-    // },
+    FLightChangeList: {
+        screen: FlightChangeListScreen
+    },
     // FlightChangeMore: {
     //     screen: FlightChangeMoreScreen
     // },

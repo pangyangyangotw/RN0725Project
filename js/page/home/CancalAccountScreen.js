@@ -6,7 +6,6 @@ import {
 import SuperView from '../../super/SuperView';
 import Theme from '../../res/styles/Theme';
 import CustomText from '../../custom/CustomText';
-import { Col } from 'native-base';
 export default class NoticeListScreen extends SuperView {
     constructor(props) {
         super(props);

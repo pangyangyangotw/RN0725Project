@@ -1744,53 +1744,69 @@ _addPassenger = (index,index2) => {
   const { userInfo, employees } = this.state;
   if(typeof(userInfo.Permission)=="undefined"){this.toastMsg('获取用户信息中，请稍等'); return}
   if(userInfo.BookingMode===0 && index===1){
-      let CertifiList = JSON.parse(userInfo.Certificate)
-      let user = {
-          IsEmployee:true,
-          SerialNumber:userInfo.SerialNumber,
-          DepartmentId:userInfo.DepartmentId,
-          DepartmentName:userInfo.Department&&userInfo.Department.Name,
-          RulesTravelId:userInfo.RulesTravelId,
-          RulesTravelName:userInfo.RulesTravel&&userInfo.RulesTravel.Name,
-          RulesTravelDetails:userInfo.RulesTravel&&userInfo.RulesTravel.RuleTravelDetails,
-          CardTravellerList:userInfo.CardTravellerList,
-          HotelCardTravellerList:userInfo.HotelCardTravellerList,
-          Id:userInfo.Id,
-          Name:userInfo.Name,
-          Gender:userInfo.Sex,
-          Mobile:userInfo.Mobile,
-          Certificates:CertifiList,
-          Birthday:userInfo.Birthday,
-          Email:userInfo.Email,
-          Surname:userInfo.LastName,
-          GivenName:userInfo.FirstName,
-          IsVip:userInfo.IsVip,
-          PassengerType:1,
-          PassengerOrigin:{Type:1,EmployeeId:userInfo.Id,TravellerId:0}, 
-          Addition:userInfo.Addition,
-          CostCenter:null,//
-          SeqNo:0,//
-          ApprovalData:{},//
-          CostCenterRequired:false,//
-          EmailRequired:false,//
-          OrderId:0,//  
-          NationalName:CertifiList&&CertifiList[0]&&CertifiList[0].NationalName,
-          Nationality:CertifiList&&CertifiList[0]&&CertifiList[0].Nationality,
-          NationalCode:CertifiList&&CertifiList[0]&&CertifiList[0].NationalCode,
-          CertificateType:CertifiList&&CertifiList[0]&&CertifiList[0].TypeDesc,
-          CertificateNumber:CertifiList&&CertifiList[0]&&CertifiList[0].SerialNumber,
-          CertificateExpire:CertifiList&&CertifiList[0]&&CertifiList[0].Expire,
-          IssueNationCode:CertifiList&&CertifiList[0]&&CertifiList[0].IssueNationCode,
-          IssueNationName:CertifiList&&CertifiList[0]&&CertifiList[0].IssueNationName,
-          SexDesc:userInfo.Sex === 1?'男':'女',
+      const _addSelfPassenger = (_userInfo) => {
+          let CertifiList = JSON.parse(_userInfo.Certificate)
+          let user = {
+              IsEmployee:true,
+              SerialNumber:_userInfo.SerialNumber,
+              DepartmentId:_userInfo.DepartmentId,
+              DepartmentName:_userInfo.Department&&_userInfo.Department.Name,
+              RulesTravelId:_userInfo.RulesTravelId,
+              RulesTravelName:_userInfo.RulesTravel&&_userInfo.RulesTravel.Name,
+              RulesTravelDetails:_userInfo.RulesTravel&&_userInfo.RulesTravel.RuleTravelDetails,
+              CardTravellerList:_userInfo.CardTravellerList,
+              HotelCardTravellerList:_userInfo.HotelCardTravellerList,
+              Id:_userInfo.Id,
+              Name:_userInfo.Name,
+              Gender:_userInfo.Sex,
+              Mobile:_userInfo.Mobile,
+              Certificates:CertifiList,
+              Birthday:_userInfo.Birthday,
+              Email:_userInfo.Email,
+              Surname:_userInfo.LastName,
+              GivenName:_userInfo.FirstName,
+              IsVip:_userInfo.IsVip,
+              PassengerType:1,
+              PassengerOrigin:{Type:1,EmployeeId:_userInfo.Id,TravellerId:0}, 
+              Addition:_userInfo.Addition,
+              CostCenter:null,//
+              SeqNo:0,//
+              ApprovalData:{},//
+              CostCenterRequired:false,//
+              EmailRequired:false,//
+              OrderId:0,//  
+              NationalName:CertifiList&&CertifiList[0]&&CertifiList[0].NationalName,
+              Nationality:CertifiList&&CertifiList[0]&&CertifiList[0].Nationality,
+              NationalCode:CertifiList&&CertifiList[0]&&CertifiList[0].NationalCode,
+              CertificateType:CertifiList&&CertifiList[0]&&CertifiList[0].TypeDesc,
+              CertificateNumber:CertifiList&&CertifiList[0]&&CertifiList[0].SerialNumber,
+              CertificateExpire:CertifiList&&CertifiList[0]&&CertifiList[0].Expire,
+              IssueNationCode:CertifiList&&CertifiList[0]&&CertifiList[0].IssueNationCode,
+              IssueNationName:CertifiList&&CertifiList[0]&&CertifiList[0].IssueNationName,
+              SexDesc:_userInfo.Sex === 1?'男':'女',
 
+          }
+          if(employees.length>0 && index2){
+              this.toastMsg('已添加本人');
+          }else{
+              employees.push(user);
+              this.setState({});
+          }
       }
-      if(employees.length>0 && index2){
-          this.toastMsg('已添加本人');
-      }else{
-          employees.push(user);
-          this.setState({});
-      }
+      StorageUtil.removeKey(Key.UserInfo).catch(() => {}).then(() => {
+          return UserInfoDao.getUserInfo();
+      }).then((freshUserInfo) => {
+        console.log(freshUserInfo);
+          if (freshUserInfo) {
+              this.setState({ userInfo: freshUserInfo });
+              _addSelfPassenger(freshUserInfo);
+          } else {
+              _addSelfPassenger(userInfo);
+          }
+      }).catch(() => {
+          _addSelfPassenger(userInfo);
+      })
+      return;
   }else{
       this._addPerson(index)
   }

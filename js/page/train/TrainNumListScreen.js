@@ -24,7 +24,7 @@ class TrainNumListScreen extends SuperView {
 
     constructor(props) {
         super(props);
-        this.params = props.navigation.state.params || {};
+        this.params = (props.route && props.route.params) || (props.navigation && props.navigation.state && props.navigation.state.params) || {};
         this._navigationHeaderView = {
             title: `备选车次推荐`,
             leftButton:ViewUtil.getLeftBackButton(this._clickLeft)

@@ -9,7 +9,7 @@ import EmployeesScreen from './EmployeesScreen'
 // import JourneyScreen from './JourneyScreen'
 import ApprovalScreen from '../home/ApprovalScreen'
 import PresonalScreen from '../home/PresonalScreen'
-// import PayListScreen from '../home/PayListScreen'
+import PayListScreen from '../home/PayListScreen'
 
 
 const ComprehensiveConfig = {
@@ -43,9 +43,9 @@ const ComprehensiveConfig = {
     Personal: {
         screen: PresonalScreen,
     },
-    // PayListScreen:{
-    //     screen:PayListScreen,
-    // }
+    PayListScreen:{
+        screen:PayListScreen,
+    }
    
 }
 

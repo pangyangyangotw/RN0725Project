@@ -14,7 +14,7 @@ import IntlFlightMoreScreen from './IntlFlightMoreScreen';
 import IntlFlightRtListScreen from './IntlFlightRtListScreen';
 import InflFlight_compCreateOrderScreen from './InflFlight_compCreateOrderScreen';
 import IntlEditPassengerScreen from '../common/IntlEditPassengerScreen';//国际的 普通订单
-// import IntlFlightEditScreen from './IntlFlightEditScreen'; //国际的 普通订单飞机编辑
+import IntlFlightEditScreen from './IntlFlightEditScreen'; //国际的 普通订单飞机编辑
 // import IntlCompEditPassengerScreen from './Intl_compEditPassengerScreen'; //国际的 创建综合订单编辑
 import Intl_compFlightEditScreen from './Intl_compFlightEditScreen';//国际 综合订单编辑
 import IntFlightRuleScreen from './FlightRuleScreen';
@@ -109,9 +109,9 @@ const intlConfig = {
     InflFlight_compCreateOrderScreen: {
         screen: InflFlight_compCreateOrderScreen
     },
-  //   IntlFlightEditScreen:{
-  //       screen: IntlFlightEditScreen
-  //   },
+    IntlFlightEditScreen:{
+        screen: IntlFlightEditScreen
+    },
     Intl_compFlightEditScreen:{
         screen: Intl_compFlightEditScreen
     },

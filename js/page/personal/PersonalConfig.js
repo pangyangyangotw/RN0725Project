@@ -43,8 +43,8 @@ import AboutUsScreen from './AboutUsScreen';
 // import ChooseApproverScreen from './Department/ChooseApproverScreen';
 import FlightCardScreen from './FlightCardScreen';
 import HotelCardScreen from './HotelCardScreen';
-// import AddNewFlightCardScreen from './AddNewFlightCardScreen';
-// import AddNewHotelCardScreen from './AddNewHotelCardScreen';
+import AddNewFlightCardScreen from './AddNewFlightCardScreen';
+import AddNewHotelCardScreen from './AddNewHotelCardScreen';
 // import FlightCompanyScreen from './FlightCompanyScreen';
 // import HotelCompanyScreen from './HotelCompanyScreen';
 import DownInvoiceListScreen from './DownInvoiceListScreen';
@@ -194,12 +194,12 @@ const PersonalConfig = {
     HotelCardScreen: {
         screen: HotelCardScreen
     },
-    // AddNewFlightCard:{
-    //     screen: AddNewFlightCardScreen
-    // },
-    // AddNewHotelCardScreen:{
-    //     screen: AddNewHotelCardScreen
-    // },
+    AddNewFlightCard:{
+        screen: AddNewFlightCardScreen
+    },
+    AddNewHotelCardScreen:{
+        screen: AddNewHotelCardScreen
+    },
     // FlightCompany:{
     //     screen: FlightCompanyScreen
     // },

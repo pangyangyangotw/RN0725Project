@@ -80,6 +80,7 @@ export default class PersonalInfoScreen extends SuperView {
                         obj.NationalName = Certificate.NationalName;
                         obj.NationalCode = Certificate.NationalCode;
                         obj.Nationality = Certificate.NationalName;
+                        obj.NationalityCode = Certificate.NationalCode;
                         obj.IssueNationName = Certificate.IssueNationName;
                         obj.IssueNationCode = Certificate.IssueNationCode;
                         obj.CertificateExpire = Certificate.Expire;
@@ -548,60 +549,6 @@ export default class PersonalInfoScreen extends SuperView {
         )
     }
 
-    // _approvalOfficer = () => {
-    //     const {addApproveAgentList,passenger} = this.state;
-    //     return(
-    //         <SelectView titleName={'审批授权人'}
-    //                     required={false}
-    //                     _clickOnpress={()=>{
-    //                         this.showAlertView('设置审批授权人，可以代替您审批');
-    //                     }}
-    //                     _haveInfoAler={true}
-    //                     _selectName={''} 
-    //                     _callBack={()=>{
-    //                         if(addApproveAgentList.length<2){
-    //                             this.push('SearchBookerScreen',{
-    //                                 _from:'审批授权人',
-    //                                 callBack:(data)=>{
-    //                                     addApproveAgentList.push(data);
-    //                                     passenger.AuthorizedApprovePerson = addApproveAgentList
-    //                                     this.setState({},()=>{
-                                            
-    //                                     })
-    //                                 }
-    //                             })
-    //                         }
-    //                     }}
-    //         /> 
-    //     )
-    // }
-    // _addApproveAgent = () => {
-    //     const {addApproveAgentList,passenger} = this.state;
-    //     return(
-    //         addApproveAgentList&&addApproveAgentList.map(( item,index )=>{
-    //             return( 
-    //                 <View style={styles.shouquanrenItemStyle} >
-    //                     <View style={{flexDirection:'row',alignItems:'center'}}>
-    //                     <CustomText text={addApproveAgentList[index].Name?addApproveAgentList[index].Name:'请选择'} style={{color:Theme.commonFontColor,fontSize:14}}></CustomText>
-    //                     <CustomText text={' '} style={{color:Theme.commonFontColor,fontSize:14}}></CustomText>
-    //                     <CustomText text={addApproveAgentList[index].Email?addApproveAgentList[index].Email:''} style={{color:Theme.commonFontColor,fontSize:14}}></CustomText>
-    //                     </View>
-    //                     <AntDesign name={'delete'} 
-    //                             size={20}
-    //                             style={{marginLeft:10}} 
-    //                             color={Theme.theme} 
-    //                             onPress={()=>{
-    //                                   addApproveAgentList.splice(index,1);
-    //                                   passenger.AuthorizedApprovePerson = addApproveAgentList
-    //                                   this.setState({})
-    //                             }} 
-    //                     />
-    //              </View>
-    //             )
-    //         })
-    //   )
-    // }
-
     _showInsurece1 = () => {
         let text = "1. 您的座位偏好可在航空预定时向航司申请, 由于航班或者航司原因可能会申请失败. \n2. 部分航司不支持在线座位偏好申请. \n3. 最终航班座位的确认以在值机时与航司确认的结果为准."
         let textEn = "1. Your seat preference will be applied to the airline at the time of the booking, due to the flight or airline reasons the application may not be confirmed.\n2. Some airlines do not support seat preferences by online requests.\n3. The final confirmation of the seat preference is subject to the result confirmed with the Airline at check-in."
@@ -728,6 +675,7 @@ export default class PersonalInfoScreen extends SuperView {
                                         passenger.NationalCode = item.Code;
                                         passenger.NationalName = item.Name;
                                         passenger.Nationality = item.Name;
+                                        passenger.NationalityCode = item.Code;
                                         this.setState({});
                                     },
                                     CertificateType:passenger.CertificateType
@@ -809,8 +757,6 @@ export default class PersonalInfoScreen extends SuperView {
                 />
                 {this._CardTravel()}
                 {this._flightFavor()}
-                {/* {this._approvalOfficer()}
-                {this._addApproveAgent()} */}
                 <CustomActioSheet ref={o => this.actionSheet = o} options={options} onPress={this._handlePress} />
                 <CustomActioSheet ref={o => this.seatActionSheet = o} options={seatOPtions} onPress={this._seatHandlePress} />
                 <CustomActioSheet ref={o => this.mealActionSheet = o} options={mealOptions} cancelButtonText={'清空'} onPress={this._mealHandlePress} />

@@ -15,13 +15,13 @@ import TrainPaymentScreen from './TrainPaymentScreen';
 import TrainReissueScreen from './TrainReissueScreen';
 import TrainChangeListScreen from './TrainChangeListScreen';
 import TrainChangeSearchScreen from './TrainChangeSearchScreen';
-// import TrainChangeTicketScreen from './TrainChangeTicketScreen';
+import TrainChangeTicketScreen from './TrainChangeTicketScreen';
 import TrainRelateScreen from './TrainRelateScreen';
 // import TrainRelateUnchainScreen from './TrainRelateUnchainScreen';
 import TrainNumListScreen from './TrainNumListScreen';
 import Train_compCreateOrderScreen from './Train_compCreateOrderScreen';
 import Train_compOrderSureScreen from './Train_compOrderSureScreen';
-// import TrainComp_EditPassengerScreen from './TrainComp_EditPassengerScreen';
+import TrainComp_EditPassengerScreen from './TrainComp_EditPassengerScreen';
 import TrainValidateScreen from './TrainValidateScreen';
 
 
@@ -48,9 +48,9 @@ let config = {
     TrainTicketScreen: {
         screen: TrainTicketDetailScreen
     },
-    // TrainChangeTicket:{
-    //     screen: TrainChangeTicketScreen
-    // },
+    TrainChangeTicket:{
+        screen: TrainChangeTicketScreen
+    },
     TrainStopStation: {
         screen: TrainStopStationScreen
     },
@@ -96,9 +96,9 @@ let config = {
     Train_compOrderSureScreen: {
         screen: Train_compOrderSureScreen
     },
-    // TrainComp_EditPassengerScreen: {
-    //     screen: TrainComp_EditPassengerScreen
-    // },
+    TrainComp_EditPassengerScreen: {
+        screen: TrainComp_EditPassengerScreen
+    },
     TrainValidateScreen: {
         screen: TrainValidateScreen
     }
